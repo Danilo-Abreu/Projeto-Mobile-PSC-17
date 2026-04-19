@@ -1,20 +1,38 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-padding">
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
+  <ion-header>
     <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
+      <ion-title>Psicologia 17</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+  <!-- Imagem -->
+  <div class="imagem">
+    <img src="/assets/image.png" alt="Foto Psicologia 17" />
   </div>
+
+  <!-- Texto -->
+  <h2>Cuidar da sua mente também é prioridade</h2>
+
+  <p>
+    Conectando pessoas e profissionais para um cuidado em saúde mental mais simples e organizado.
+  </p>
+
+  <!-- Botão -->
+  <ion-button expand="block" class="btn-principal" routerLink="/register">
+    Criar conta
+  </ion-button>
+
+  <!-- Link -->
+  <div class="entrar">
+    <div class="linha"></div>
+    <span routerLink="/login">Entrar</span>
+    <div class="linha"></div>
+  </div>
+
+  <!-- Rodapé -->
+  <p class="footer">
+    Seus dados são seguros e confidenciais
+  </p>
+
 </ion-content>
