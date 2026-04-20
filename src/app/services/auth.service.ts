@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
 
 export interface User {
   nome: string;
@@ -18,50 +19,77 @@ export interface User {
   providedIn: 'root'
 })
 export class AuthService {
-  private users: User[] = [];
 
-  constructor() {}
+  constructor(private firestore: AngularFirestore) {}
 
-  login(email: string, senha: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const user = this.users.find(u => u.email === email && u.senha === senha);
-      if (user) {
+  // LOGIN
+  async login(email: string, senha: string): Promise<boolean> {
+    try {
+      const snapshot = await this.firestore
+        .collection('usuarios', ref =>
+          ref.where('email', '==', email).where('senha', '==', senha)
+        )
+        .get()
+        .toPromise();
+
+      if (snapshot && !snapshot.empty) {
+        const user = snapshot.docs[0].data() as User;
+
         console.log('Login successful:', user);
         localStorage.setItem('currentUser', JSON.stringify(user));
-        resolve(true);
+        return true;
       } else {
         console.log('Login failed: Invalid credentials');
-        resolve(false);
+        return false;
       }
-    });
+
+    } catch (error) {
+      console.error('Erro no login:', error);
+      throw error;
+    }
   }
 
-  register(userData: User): Promise<boolean> {
-    return new Promise((resolve) => {
-      // Verificar se email já existe
-      const existingUser = this.users.find(u => u.email === userData.email);
-      if (existingUser) {
+  // REGISTRO
+  async register(userData: User): Promise<boolean> {
+    try {
+      // Verifica se email já existe
+      const snapshot = await this.firestore
+        .collection('usuarios', ref => ref.where('email', '==', userData.email))
+        .get()
+        .toPromise();
+
+      if (snapshot && !snapshot.empty) {
         console.log('Registration failed: Email already exists');
-        resolve(false);
-        return;
+        return false;
       }
 
-      // Adicionar novo usuário
-      this.users.push(userData);
+      // Salva no Firebase
+      await this.firestore.collection('usuarios').add({
+        ...userData,
+        criadoEm: new Date()
+      });
+
       console.log('Registration successful:', userData);
-      resolve(true);
-    });
+      return true;
+
+    } catch (error) {
+      console.error('Erro no cadastro:', error);
+      throw error;
+    }
   }
 
+  // LOGOUT
   logout(): void {
     localStorage.removeItem('currentUser');
   }
 
+  // USUÁRIO ATUAL
   getCurrentUser(): User | null {
     const user = localStorage.getItem('currentUser');
     return user ? JSON.parse(user) : null;
   }
 
+  // VERIFICA SE ESTÁ LOGADO
   isLoggedIn(): boolean {
     return this.getCurrentUser() !== null;
   }
