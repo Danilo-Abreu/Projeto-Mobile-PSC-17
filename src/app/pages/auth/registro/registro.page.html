@@ -1,4 +1,4 @@
-<ion-content class="ion-padding">
+﻿<ion-content class="ion-padding">
 
   <h2>Cadastro</h2>
 
@@ -48,10 +48,39 @@
     <ion-input [(ngModel)]="formData.senha" placeholder="Digite sua senha" type="password" required></ion-input>
   </ion-item>
 
+  <!-- Requisitos de Senha -->
+  <div class="password-requirements" *ngIf="formData.senha">
+    <p><small>Requisitos de senha:</small></p>
+    <p [class.valid]="hasMinLength()">
+      <ion-icon *ngIf="hasMinLength()" name="checkmark-circle"></ion-icon>
+      <ion-icon *ngIf="!hasMinLength()" name="close-circle"></ion-icon>
+      Mínimo 8 caracteres
+    </p>
+    <p [class.valid]="hasUpperCase()">
+      <ion-icon *ngIf="hasUpperCase()" name="checkmark-circle"></ion-icon>
+      <ion-icon *ngIf="!hasUpperCase()" name="close-circle"></ion-icon>
+      Letra maiúscula
+    </p>
+    <p [class.valid]="hasLowerCase()">
+      <ion-icon *ngIf="hasLowerCase()" name="checkmark-circle"></ion-icon>
+      <ion-icon *ngIf="!hasLowerCase()" name="close-circle"></ion-icon>
+      Letra minúscula
+    </p>
+    <p [class.valid]="hasNumber()">
+      <ion-icon *ngIf="hasNumber()" name="checkmark-circle"></ion-icon>
+      <ion-icon *ngIf="!hasNumber()" name="close-circle"></ion-icon>
+      Número
+    </p>
+  </div>
+
   <ion-item>
     <ion-label position="floating">Confirmar Senha *</ion-label>
     <ion-input [(ngModel)]="confirmarSenha" placeholder="Confirme sua senha" type="password" required></ion-input>
   </ion-item>
+
+  <ion-text *ngIf="formData.senha && confirmarSenha && formData.senha !== confirmarSenha" color="danger">
+    <small>As senhas não coincidem</small>
+  </ion-text>
 
   <!-- Endereço -->
   <h3>Endereço</h3>

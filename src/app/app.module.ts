@@ -1,6 +1,7 @@
-import { NgModule } from '@angular/core';
+﻿import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 
@@ -15,6 +16,7 @@ import { environment } from 'src/environments/environment';
   declarations: [AppComponent],
   imports: [
     BrowserModule,
+    FormsModule,
     IonicModule.forRoot(),
     AppRoutingModule,
 
@@ -24,4 +26,4 @@ import { environment } from 'src/environments/environment';
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy }],
   bootstrap: [AppComponent],
 })
-export class AppModule {}
+export class AppModule { }

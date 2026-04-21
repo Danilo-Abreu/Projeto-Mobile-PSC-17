@@ -34,6 +34,22 @@ export class RegistroPage implements OnInit {
   ngOnInit() {
   }
 
+  hasMinLength(): boolean {
+    return this.formData.senha.length >= 8;
+  }
+
+  hasUpperCase(): boolean {
+    return /[A-Z]/.test(this.formData.senha);
+  }
+
+  hasLowerCase(): boolean {
+    return /[a-z]/.test(this.formData.senha);
+  }
+
+  hasNumber(): boolean {
+    return /[0-9]/.test(this.formData.senha);
+  }
+
   isFormValid(): boolean {
     return !!(
       this.formData.nome.trim() &&
@@ -51,7 +67,8 @@ export class RegistroPage implements OnInit {
       this.formData.senha === this.confirmarSenha &&
       this.isValidEmail(this.formData.email) &&
       this.isValidCPF(this.formData.cpf) &&
-      this.isValidPhone(this.formData.telefone)
+      this.isValidPhone(this.formData.telefone) &&
+      this.isValidPassword(this.formData.senha)
     );
   }
 
@@ -61,16 +78,12 @@ export class RegistroPage implements OnInit {
   }
 
   isValidCPF(cpf: string): boolean {
-    // Remove máscara
     const cpfClean = cpf.replace(/\D/g, '');
     
-    // Verifica se tem 11 dígitos
     if (cpfClean.length !== 11) return false;
     
-    // Verifica se todos os dígitos são iguais
     if (/^(\d)\1{10}$/.test(cpfClean)) return false;
     
-    // Validação do primeiro dígito verificador
     let sum = 0;
     for (let i = 0; i < 9; i++) {
       sum += parseInt(cpfClean.charAt(i)) * (10 - i);
@@ -78,7 +91,6 @@ export class RegistroPage implements OnInit {
     let digit1 = 11 - (sum % 11);
     digit1 = digit1 > 9 ? 0 : digit1;
     
-    // Validação do segundo dígito verificador
     sum = 0;
     for (let i = 0; i < 10; i++) {
       sum += parseInt(cpfClean.charAt(i)) * (11 - i);
@@ -90,21 +102,26 @@ export class RegistroPage implements OnInit {
   }
 
   isValidPhone(phone: string): boolean {
-    // Remove caracteres não numéricos
     const phoneClean = phone.replace(/\D/g, '');
-    // Valida telefone com 11 dígitos (celular)
     return phoneClean.length === 11;
   }
 
+  isValidPassword(password: string): boolean {
+    if (password.length < 8) return false;
+    if (!/[A-Z]/.test(password)) return false;
+    if (!/[a-z]/.test(password)) return false;
+    if (!/[0-9]/.test(password)) return false;
+    
+    return true;
+  }
+
   isValidDate(date: string): boolean {
-    // Validação básica de data no formato DD/MM/AAAA
     const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
     if (!dateRegex.test(date)) return false;
 
     const [day, month, year] = date.split('/').map(Number);
     const dateObj = new Date(year, month - 1, day);
 
-    // Verifica se a data é válida e se não é futura
     const today = new Date();
     return dateObj.getDate() === day &&
            dateObj.getMonth() === month - 1 &&
@@ -113,7 +130,6 @@ export class RegistroPage implements OnInit {
   }
 
   async buscarCep() {
-    // Remove máscara do CEP
     const cepClean = this.formData.cep.replace(/\D/g, '');
     
     if (cepClean.length !== 8) {
@@ -128,7 +144,6 @@ export class RegistroPage implements OnInit {
       const response: any = await this.http.get('https://viacep.com.br/ws/' + cepClean + '/json/').toPromise();
       
       if (response && !response.erro) {
-        // Preenche o endereço automaticamente
         this.formData.endereco = response.logradouro + ', ' + response.bairro;
       } else {
         this.errorMessage = 'CEP não encontrado. Verifique e tente novamente.';

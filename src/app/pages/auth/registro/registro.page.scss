@@ -1,4 +1,4 @@
-h2 {
+﻿h2 {
   text-align: center;
   margin-bottom: 30px;
   color: #0054e9;
@@ -42,30 +42,56 @@ ion-label {
   font-weight: 500;
 }
 
+.password-requirements {
+  background-color: #f5f5f5;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: -10px 0 15px 0;
+  
+  p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    ion-icon {
+      font-size: 18px;
+      margin-right: 4px;
+    }
+    
+    &.valid {
+      color: #4caf50;
+      
+      ion-icon {
+        color: #4caf50;
+      }
+    }
+  }
+  
+  small {
+    color: #666;
+    font-weight: 600;
+  }
+}
+
 .register-button {
   margin-top: 30px;
   --border-radius: 8px;
   --background: #0054e9;
   --background-hover: #0046cc;
   --background-activated: #003399;
-  font-weight: 600;
-  height: 48px;
-}
-
-.register-button:disabled {
-  --background: #ccc;
-  --background-hover: #ccc;
 }
 
 .login-link {
   text-align: center;
   margin-top: 20px;
   color: #0054e9;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.login-link:hover {
+  cursor: pointer;
   text-decoration: underline;
+  
+  &:hover {
+    opacity: 0.8;
+  }
 }
