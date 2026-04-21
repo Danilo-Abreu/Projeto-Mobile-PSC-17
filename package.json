@@ -25,6 +25,7 @@
     "@ionic/angular": "^6.0.0",
     "firebase": "^9.23.0",
     "ionicons": "^6.0.0",
+    "ngx-mask": "^16.4.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"
