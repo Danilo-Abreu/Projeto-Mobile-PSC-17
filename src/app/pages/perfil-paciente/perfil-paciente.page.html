@@ -1,0 +1,55 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title class="ion-text-center">Perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <div class="perfil-card">
+
+    <div class="topo">
+      <div class="foto" (click)="tirarFoto()">
+        <img [src]="user?.foto || 'assets/avatar.png'" />
+      </div>
+
+      <h2>{{ user?.nome }}</h2>
+    </div>
+
+    <div class="info">
+      <p><strong>Email:</strong> {{ user?.email }}</p>
+      <p><strong>Telefone:</strong> {{ user?.telefone }}</p>
+      <p><strong>Endereço:</strong> {{ user?.endereco }}</p>
+    </div>
+
+    <ion-button expand="block" (click)="carregarPsicologos()">
+      {{ mostrarLista ? 'Ocultar psicólogos' : 'Ver psicólogos' }}
+    </ion-button>
+
+    <div *ngIf="mostrarLista">
+
+      <ion-card *ngFor="let p of psicologos">
+
+        <ion-item>
+          <ion-avatar slot="start">
+            <img [src]="p.foto || 'assets/avatar.png'" />
+          </ion-avatar>
+
+          <ion-label>
+            <h2>{{ p.nome }} {{ p.sobrenome }}</h2>
+            <p>{{ p.email }}</p>
+          </ion-label>
+
+        </ion-item>
+
+      </ion-card>
+
+    </div>
+
+    <ion-button expand="block" color="danger" (click)="logout()">
+      Sair
+    </ion-button>
+
+  </div>
+
+</ion-content>

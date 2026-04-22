@@ -1,10 +1,10 @@
-<ion-content class="ion-padding">
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Psicologia 17</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>Psicologia 17</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
 
   <!-- Imagem -->
   <div class="imagem">
@@ -26,7 +26,12 @@
   <!-- Link -->
   <div class="entrar">
     <div class="linha"></div>
-    <span routerLink="/login">Entrar</span>
+
+    <!-- Melhor usar ion-button ao invés de span -->
+    <ion-button fill="clear" routerLink="/login">
+      Entrar
+    </ion-button>
+
     <div class="linha"></div>
   </div>
 

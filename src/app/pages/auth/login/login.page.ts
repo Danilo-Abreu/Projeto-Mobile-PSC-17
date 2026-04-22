@@ -1,11 +1,17 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
+  standalone: true,
+  imports: [IonicModule, FormsModule, CommonModule, RouterLink] 
 })
 export class LoginPage {
 
@@ -14,7 +20,7 @@ export class LoginPage {
   isLoading: boolean = false;
   errorMessage: string = '';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router) { }
 
   isFormValid(): boolean {
     return !!(this.email.trim() && this.senha && this.isValidEmail(this.email));
@@ -38,7 +44,17 @@ export class LoginPage {
       const success = await this.auth.login(this.email, this.senha);
       if (success) {
         console.log('Login realizado com sucesso!');
-        this.router.navigate(['/home']);
+
+        const user = this.auth.getCurrentUser();
+
+        if (user?.tipoUsuario === 'paciente') {
+          this.router.navigate(['/perfil-paciente']);
+        } else if (user?.tipoUsuario === 'psicologo') {
+          this.router.navigate(['/perfil-psicologo']);
+        } else {
+          this.router.navigate(['/home']); // fallback
+        }
+
       } else {
         this.errorMessage = 'Email ou senha incorretos.';
       }

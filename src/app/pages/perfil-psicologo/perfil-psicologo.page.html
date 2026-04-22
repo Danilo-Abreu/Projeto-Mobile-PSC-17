@@ -1,0 +1,35 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title class="ion-text-center">Perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <div class="perfil-card">
+
+    <div class="topo">
+      <div class="foto" (click)="tirarFoto()">
+        <img [src]="user?.foto || 'assets/avatar.png'" />
+      </div>
+
+      <h2>{{ user?.nome }}</h2>
+    </div>
+
+    <div class="info">
+      <p><strong>Email:</strong> {{ user?.email }}</p>
+      <p><strong>Especialidade:</strong> {{ user?.especialidade }}</p>
+      <p><strong>CRP:</strong> {{ user?.crp }}</p>
+    </div>
+
+    <div class="descricao">
+      <p>{{ user?.descricao || 'Adicione uma descrição sobre sua experiência...' }}</p>
+    </div>
+
+    <ion-button expand="block" color="danger" (click)="logout()">
+      Sair
+    </ion-button>
+
+  </div>
+
+</ion-content>

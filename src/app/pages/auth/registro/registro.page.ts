@@ -2,11 +2,17 @@
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService, User } from 'src/app/services/auth.service';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-registro',
   templateUrl: './registro.page.html',
   styleUrls: ['./registro.page.scss'],
+  standalone: true,
+  imports: [IonicModule, FormsModule, CommonModule, RouterLink] 
 })
 export class RegistroPage implements OnInit {
 
@@ -29,10 +35,57 @@ export class RegistroPage implements OnInit {
   errorMessage: string = '';
   cepLoading: boolean = false;
 
-  constructor(private auth: AuthService, private router: Router, private http: HttpClient) { }
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+    private http: HttpClient
+  ) {}
 
-  ngOnInit() {
+  ngOnInit() {}
+
+  // =========================
+  // MÁSCARAS
+  // =========================
+
+  formatarCPF(event: any) {
+    let valor = event.target.value.replace(/\D/g, '');
+
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+    valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+
+    this.formData.cpf = valor;
   }
+
+  formatarData(event: any) {
+    let valor = event.target.value.replace(/\D/g, '');
+
+    valor = valor.replace(/(\d{2})(\d)/, '$1/$2');
+    valor = valor.replace(/(\d{2})(\d)/, '$1/$2');
+
+    this.formData.dataNascimento = valor;
+  }
+
+  formatarTelefone(event: any) {
+    let valor = event.target.value.replace(/\D/g, '');
+
+    valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+    valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
+
+    this.formData.telefone = valor;
+  }
+
+  formatarCEP(event: any) {
+    let valor = event.target.value.replace(/\D/g, '');
+
+    valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
+
+    this.formData.cep = valor;
+  }
+
+  // =========================
+  // VALIDAÇÕES
+  // =========================
 
   hasMinLength(): boolean {
     return this.formData.senha.length >= 8;
@@ -81,7 +134,6 @@ export class RegistroPage implements OnInit {
     const cpfClean = cpf.replace(/\D/g, '');
     
     if (cpfClean.length !== 11) return false;
-    
     if (/^(\d)\1{10}$/.test(cpfClean)) return false;
     
     let sum = 0;
@@ -98,7 +150,8 @@ export class RegistroPage implements OnInit {
     let digit2 = 11 - (sum % 11);
     digit2 = digit2 > 9 ? 0 : digit2;
     
-    return digit1 === parseInt(cpfClean.charAt(9)) && digit2 === parseInt(cpfClean.charAt(10));
+    return digit1 === parseInt(cpfClean.charAt(9)) &&
+           digit2 === parseInt(cpfClean.charAt(10));
   }
 
   isValidPhone(phone: string): boolean {
@@ -111,7 +164,6 @@ export class RegistroPage implements OnInit {
     if (!/[A-Z]/.test(password)) return false;
     if (!/[a-z]/.test(password)) return false;
     if (!/[0-9]/.test(password)) return false;
-    
     return true;
   }
 
@@ -123,11 +175,16 @@ export class RegistroPage implements OnInit {
     const dateObj = new Date(year, month - 1, day);
 
     const today = new Date();
+
     return dateObj.getDate() === day &&
            dateObj.getMonth() === month - 1 &&
            dateObj.getFullYear() === year &&
            dateObj <= today;
   }
+
+  // =========================
+  // CEP
+  // =========================
 
   async buscarCep() {
     const cepClean = this.formData.cep.replace(/\D/g, '');
@@ -141,25 +198,31 @@ export class RegistroPage implements OnInit {
     this.errorMessage = '';
     
     try {
-      const response: any = await this.http.get('https://viacep.com.br/ws/' + cepClean + '/json/').toPromise();
+      const response: any = await this.http
+        .get('https://viacep.com.br/ws/' + cepClean + '/json/')
+        .toPromise();
       
       if (response && !response.erro) {
         this.formData.endereco = response.logradouro + ', ' + response.bairro;
       } else {
-        this.errorMessage = 'CEP não encontrado. Verifique e tente novamente.';
+        this.errorMessage = 'CEP não encontrado.';
         this.formData.endereco = '';
       }
     } catch (error) {
-      this.errorMessage = 'Erro ao buscar CEP. Verifique sua conexão.';
-      console.error('Erro na busca de CEP:', error);
+      this.errorMessage = 'Erro ao buscar CEP.';
+      console.error(error);
     } finally {
       this.cepLoading = false;
     }
   }
 
+  // =========================
+  // CADASTRO
+  // =========================
+
   async cadastrar() {
     if (!this.isFormValid()) {
-      this.errorMessage = 'Por favor, preencha todos os campos corretamente.';
+      this.errorMessage = 'Preencha todos os campos corretamente.';
       return;
     }
 
@@ -168,15 +231,16 @@ export class RegistroPage implements OnInit {
 
     try {
       const success = await this.auth.register(this.formData);
+
       if (success) {
-        console.log('Cadastro realizado com sucesso!');
         this.router.navigate(['/login']);
       } else {
-        this.errorMessage = 'Email já cadastrado. Tente outro email.';
+        this.errorMessage = 'Email já cadastrado.';
       }
+
     } catch (error) {
-      this.errorMessage = 'Erro ao realizar cadastro. Tente novamente.';
-      console.error('Erro no cadastro:', error);
+      this.errorMessage = 'Erro no cadastro.';
+      console.error(error);
     } finally {
       this.isLoading = false;
     }
