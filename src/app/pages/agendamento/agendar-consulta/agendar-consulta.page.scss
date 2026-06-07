@@ -1,0 +1,35 @@
+// src/app/pages/agendamento/agendar-consulta/agendar-consulta.page.scss
+ion-content {
+  --background: #f4f5f8;
+}
+
+ion-card {
+  margin: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+ion-card-title {
+  font-weight: bold;
+  color: var(--ion-color-primary);
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 10px;
+}
+
+ion-datetime-button {
+  margin-top: 8px;
+}
+
+ion-button {
+  --border-radius: 8px;
+  margin-top: 24px;
+  font-weight: 600;
+}
+
+ion-spinner {
+  margin-right: 8px;
+}

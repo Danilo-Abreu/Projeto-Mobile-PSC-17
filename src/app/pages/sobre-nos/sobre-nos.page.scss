@@ -1,0 +1,30 @@
+
+.sobre-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+
+  ion-card {
+    margin: 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+    ion-card-title {
+      font-weight: 700;
+      color: var(--ion-color-primary);
+    }
+
+    ion-card-content {
+      p {
+        line-height: 1.6;
+        color: var(--ion-color-step-600);
+        margin-bottom: 12px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}

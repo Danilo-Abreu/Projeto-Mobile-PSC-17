@@ -44,10 +44,26 @@
 
       </ion-card>
 
+      <ion-list *ngIf="mostrarLista">
+        <ion-item *ngFor="let psicologo of psicologos">
+          <ion-label>
+            <h2>{{ psicologo.nome }} {{ psicologo.sobrenome }}</h2>
+             <p>{{ psicologo.email }}</p>
+          </ion-label>
+      <ion-button slot="end" [routerLink]="['/agendar-consulta', psicologo.email]">
+         Agendar
+      </ion-button>
+         </ion-item>
+      </ion-list>
+
     </div>
 
     <ion-button expand="block" color="danger" (click)="logout()">
       Sair
+    </ion-button>
+
+    <ion-button expand="block" routerLink="/proximas-consultas" class="ion-margin-top">
+    Minhas Próximas Consultas
     </ion-button>
 
   </div>

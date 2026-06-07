@@ -47,6 +47,40 @@ const routes: Routes = [
     //canActivate: [AuthGuard, RoleGuard],
     data: { role: 'psicologo' }
   }
+
+  ,{
+    path: 'agendar-consulta/:psicologoEmail', // Passa o e-mail do psicólogo como parâmetro
+    loadComponent: () =>
+      import('./pages/agendamento/agendar-consulta/agendar-consulta.page').then(m => m.AgendarConsultaPage)
+  },
+
+  {
+    path: 'agenda-psicologo',
+    loadComponent: () =>
+      import('./pages/agendamento/agenda-psicologo/agenda-psicologo.page').then(m => m.AgendaPsicologoPage)
+  },
+
+  {
+    path: 'proximas-consultas',
+    loadComponent: () =>
+      import('./pages/agendamento/proximas-consultas/proximas-consultas.page').then(m => m.ProximasConsultasPage)
+  },
+
+ {
+  path: 'sobre-nos',
+  loadComponent: () => import('./pages/sobre-nos/sobre-nos.page').then(m => m.SobreNosPage)
+ },
+
+ {
+    path: 'lista-psicologos',
+    loadComponent: () => import('./pages/lista-psicologos/lista-psicologos.page').then(m => m.ListaPsicologosPage)
+  },
+  
+  {
+    path: 'detalhes-psicologo/:id',
+    loadComponent: () => import('./pages/detalhes-psicologo/detalhes-psicologo.page').then(m => m.DetalhesPsicologoPage)
+  },
+
 ];
 
 @NgModule({
