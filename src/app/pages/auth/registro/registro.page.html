@@ -21,19 +21,31 @@
   </ion-item>
 
   <ion-item>
-    <ion-label position="floating">CPF *</ion-label>
-    <ion-input [(ngModel)]="formData.cpf" mask="000.000.000-00"></ion-input>
-  </ion-item>
+  <ion-label position="floating">CPF *</ion-label>
+  <ion-input
+    [(ngModel)]="formData.cpf"
+    (ionInput)="formatarCPF($event)"
+    maxlength="14">
+  </ion-input>
+</ion-item>
 
   <ion-item>
-    <ion-label position="floating">Data de Nascimento *</ion-label>
-    <ion-input [(ngModel)]="formData.dataNascimento" mask="00/00/0000"></ion-input>
-  </ion-item>
+  <ion-label position="floating">Data de Nascimento *</ion-label>
+  <ion-input
+    [(ngModel)]="formData.dataNascimento"
+    (ionInput)="formatarData($event)"
+    maxlength="10">
+  </ion-input>
+</ion-item>
 
   <ion-item>
-    <ion-label position="floating">Telefone *</ion-label>
-    <ion-input [(ngModel)]="formData.telefone" mask="(00) 00000-0000"></ion-input>
-  </ion-item>
+  <ion-label position="floating">Telefone *</ion-label>
+  <ion-input
+    [(ngModel)]="formData.telefone"
+    (ionInput)="formatarTelefone($event)"
+    maxlength="15">
+  </ion-input>
+</ion-item>
 
   <!-- Dados de Acesso -->
   <h3>Dados de Acesso</h3>
@@ -86,9 +98,14 @@
   <h3>Endereço</h3>
 
   <ion-item>
-    <ion-label position="floating">CEP *</ion-label>
-    <ion-input [(ngModel)]="formData.cep" mask="00000-000" (ionBlur)="buscarCep()"></ion-input>
-  </ion-item>
+  <ion-label position="floating">CEP *</ion-label>
+  <ion-input
+    [(ngModel)]="formData.cep"
+    (ionInput)="formatarCEP($event)"
+    (ionBlur)="buscarCep()"
+    maxlength="9">
+  </ion-input>
+</ion-item>
 
   <ion-item>
     <ion-label position="floating">Endereço *</ion-label>

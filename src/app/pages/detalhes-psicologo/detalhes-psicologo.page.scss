@@ -1,0 +1,64 @@
+/* src/app/pages/detalhes-psicologo/detalhes-psicologo.page.scss */
+
+.perfil-header {
+  padding: 20px 0;
+  
+  .foto-perfil {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    border: 3px solid var(--ion-color-primary);
+    border-radius: 50%; // Para fotos de perfil redondas
+    overflow: hidden;
+  }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--ion-color-dark);
+  }
+
+  .crp {
+    color: var(--ion-color-step-600);
+    font-size: 14px;
+    margin-top: 8px;
+  }
+}
+
+ion-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-inline: 0;
+  margin-bottom: 16px;
+
+  ion-card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+  }
+
+  ion-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --inner-border-width: 0;
+    ion-icon {
+      color: var(--ion-color-medium);
+      margin-right: 10px;
+    }
+    ion-label {
+      h3 {
+        font-weight: 500;
+        color: var(--ion-color-dark);
+      }
+      p {
+        color: var(--ion-color-step-600);
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+ion-button {
+  margin-top: 20px;
+}

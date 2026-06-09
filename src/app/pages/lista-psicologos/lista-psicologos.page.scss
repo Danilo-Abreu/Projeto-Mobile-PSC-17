@@ -1,0 +1,46 @@
+/* src/app/pages/lista-psicologos/lista-psicologos.page.scss */
+
+ion-searchbar {
+  --background: var(--ion-color-primary);
+  --color: #fff;
+  --placeholder-color: rgba(255, 255, 255, 0.7);
+  --icon-color: #fff;
+  --clear-button-color: #fff;
+  padding-bottom: 0;
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --inner-border-width: 0;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  ion-avatar {
+    width: 60px;
+    height: 60px;
+    margin-right: 16px;
+    border: 2px solid var(--ion-color-medium);
+  }
+
+  ion-label {
+    h2 {
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+    p {
+      color: var(--ion-color-medium);
+      font-size: 14px;
+    }
+    ion-note {
+      font-weight: 500;
+      font-size: 13px;
+    }
+  }
+}
+
+.ion-text-center {
+  padding-top: 20px;
+  color: var(--ion-color-medium);
+}

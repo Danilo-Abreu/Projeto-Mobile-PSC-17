@@ -20,7 +20,7 @@ export interface User {
 })
 export class AuthService {
 
-  constructor(private firestore: AngularFirestore) {}
+  constructor(private firestore: AngularFirestore) { }
 
   // LOGIN
   async login(email: string, senha: string): Promise<boolean> {
@@ -84,7 +84,7 @@ export class AuthService {
   }
 
   // USUÁRIO ATUAL
-  getCurrentUser(): User | null {
+  getCurrentUser() {
     const user = localStorage.getItem('currentUser');
     return user ? JSON.parse(user) : null;
   }
@@ -92,5 +92,17 @@ export class AuthService {
   // VERIFICA SE ESTÁ LOGADO
   isLoggedIn(): boolean {
     return this.getCurrentUser() !== null;
+  }
+
+  updateUser(user: any) {
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  }
+
+  getPsicologos() {
+    return this.firestore
+      .collection('usuarios', ref =>
+        ref.where('tipoUsuario', '==', 'psicologo')
+      )
+      .valueChanges();
   }
 }

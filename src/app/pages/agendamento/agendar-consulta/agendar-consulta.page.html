@@ -1,0 +1,57 @@
+<!-- src/app/pages/agendamento/agendar-consulta/agendar-consulta.page.html -->
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/perfil-paciente"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Agendar Consulta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Agendar com {{ psicologoNome }}</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item *ngIf="errorMessage">
+        <ion-label color="danger">{{ errorMessage }}</ion-label>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Data da Consulta</ion-label>
+        <ion-datetime-button datetime="datetime-data"></ion-datetime-button>
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime id="datetime-data" presentation="date" [(ngModel)]="dataConsulta"></ion-datetime>
+          </ng-template>
+        </ion-modal>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Hora da Consulta</ion-label>
+        <ion-datetime-button datetime="datetime-hora"></ion-datetime-button>
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime id="datetime-hora" presentation="time" [(ngModel)]="horaConsulta"></ion-datetime>
+          </ng-template>
+        </ion-modal>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Duração (minutos)</ion-label>
+        <ion-input type="number" [(ngModel)]="duracaoMinutos" placeholder="Ex: 50"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Observações (opcional)</ion-label>
+        <ion-textarea [(ngModel)]="observacoes" rows="3" placeholder="Ex: Primeira sessão, foco em ansiedade..."></ion-textarea>
+      </ion-item>
+
+      <ion-button expand="block" class="ion-margin-top" (click)="agendar()" [disabled]="isLoading">
+        <ion-spinner *ngIf="isLoading" name="circular"></ion-spinner>
+        {{ isLoading ? 'Agendando...' : 'Confirmar Agendamento' }}
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
