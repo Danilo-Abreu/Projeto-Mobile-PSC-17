@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/perfil-psicologo"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Detalhes do paciente</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ng-container *ngIf="paciente; else noPaciente">
+    <ion-card>
+      <ion-card-header>
+        <ion-avatar class="avatar-card">
+          <img [src]="paciente.foto || 'assets/avatar.png'" />
+        </ion-avatar>
+        <ion-card-title>{{ paciente.nome }} {{ paciente.sobrenome }}</ion-card-title>
+        <ion-card-subtitle>{{ paciente.email }}</ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        <p><strong>Telefone:</strong> {{ paciente.telefone }}</p>
+        <p><strong>Endereço:</strong> {{ paciente.endereco }}</p>
+        <p><strong>Data de nascimento:</strong> {{ paciente.dataNascimento }}</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Consultas deste paciente</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div *ngIf="agendamentos.length > 0; else semConsultas">
+          <ion-list>
+            <ion-item *ngFor="let agendamento of agendamentos">
+              <ion-label>
+                <h2>{{ formatarDataHora(agendamento.dataHora) }}</h2>
+                <p>Status: {{ agendamento.status }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+        <ng-template #semConsultas>
+          <p>Não há consultas registradas com este paciente.</p>
+        </ng-template>
+      </ion-card-content>
+    </ion-card>
+  </ng-container>
+
+  <ng-template #noPaciente>
+    <p>Paciente não encontrado.</p>
+  </ng-template>
+</ion-content>

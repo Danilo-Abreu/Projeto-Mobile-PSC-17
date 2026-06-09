@@ -1,71 +1,201 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title class="ion-text-center">Perfil</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content class="ion-padding">
-
-  <div class="perfil-card">
-
-    <div class="topo">
-      <div class="foto" (click)="tirarFoto()">
-        <img [src]="user?.foto || 'assets/avatar.png'" />
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Meu Perfil</ion-card-title>
+      <ion-card-subtitle>Dados pessoais do paciente</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="avatar-container">
+        <img *ngIf="user.foto" [src]="user.foto" alt="Foto do paciente" class="avatar" />
+        <div *ngIf="!user.foto" class="avatar placeholder">Sem foto</div>
       </div>
 
-      <h2>{{ user?.nome }}</h2>
-    </div>
+      <ion-item>
+        <ion-button expand="full" fill="outline" (click)="capturePhoto()">
+          Usar câmera
+        </ion-button>
+      </ion-item>
 
-    <div class="info">
-      <p><strong>Email:</strong> {{ user?.email }}</p>
-      <p><strong>Telefone:</strong> {{ user?.telefone }}</p>
-      <p><strong>Endereço:</strong> {{ user?.endereco }}</p>
-    </div>
+      <ion-item>
+        <ion-label position="stacked">Foto do perfil</ion-label>
+        <input type="file" accept="image/*" (change)="onFotoSelecionada($event)" />
+      </ion-item>
 
-    <ion-button expand="block" (click)="carregarPsicologos()">
-      {{ mostrarLista ? 'Ocultar psicólogos' : 'Ver psicólogos' }}
-    </ion-button>
+      <ion-item *ngIf="!editMode">
+        <ion-label><h2>{{ user.nome }} {{ user.sobrenome }}</h2></ion-label>
+      </ion-item>
 
-    <div *ngIf="mostrarLista">
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">Nome</ion-label>
+        <ion-input [(ngModel)]="user.nome" placeholder="Nome"></ion-input>
+      </ion-item>
 
-      <ion-card *ngFor="let p of psicologos">
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">Sobrenome</ion-label>
+        <ion-input [(ngModel)]="user.sobrenome" placeholder="Sobrenome"></ion-input>
+      </ion-item>
 
-        <ion-item>
-          <ion-avatar slot="start">
-            <img [src]="p.foto || 'assets/avatar.png'" />
-          </ion-avatar>
+      <ion-item>
+        <ion-label position="stacked">E-mail</ion-label>
+        <ion-input [(ngModel)]="user.email" readonly></ion-input>
+      </ion-item>
 
-          <ion-label>
-            <h2>{{ p.nome }} {{ p.sobrenome }}</h2>
-            <p>{{ p.email }}</p>
-          </ion-label>
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">Telefone</ion-label>
+        <ion-input [(ngModel)]="user.telefone" placeholder="Telefone"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="!editMode">
+        <ion-label><strong>Telefone:</strong></ion-label>
+        <ion-note>{{ user.telefone }}</ion-note>
+      </ion-item>
 
-        </ion-item>
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">CPF</ion-label>
+        <ion-input [(ngModel)]="user.cpf" placeholder="CPF"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="!editMode">
+        <ion-label><strong>CPF:</strong></ion-label>
+        <ion-note>{{ user.cpf }}</ion-note>
+      </ion-item>
 
-      </ion-card>
+      <ion-item>
+        <ion-label><strong>Data de nascimento:</strong></ion-label>
+        <ion-note>{{ user.dataNascimento }}</ion-note>
+      </ion-item>
 
-      <ion-list *ngIf="mostrarLista">
-        <ion-item *ngFor="let psicologo of psicologos">
-          <ion-label>
-            <h2>{{ psicologo.nome }} {{ psicologo.sobrenome }}</h2>
-             <p>{{ psicologo.email }}</p>
-          </ion-label>
-      <ion-button slot="end" [routerLink]="['/agendar-consulta', psicologo.email]">
-         Agendar
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">Data de nascimento</ion-label>
+        <ion-button fill="outline" size="small" (click)="showDatepicker = !showDatepicker">
+          {{ showDatepicker ? 'Ocultar calendário' : 'Editar data' }}
+        </ion-button>
+      </ion-item>
+
+      <ion-item *ngIf="editMode && showDatepicker">
+        <ion-datetime display-format="DD/MM/YYYY" picker-format="DD/MM/YYYY" [(ngModel)]="user.dataNascimentoIso"></ion-datetime>
+      </ion-item>
+
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">CEP</ion-label>
+        <ion-input [(ngModel)]="user.cep" placeholder="CEP"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="!editMode">
+        <ion-label><strong>CEP:</strong></ion-label>
+        <ion-note>{{ user.cep }}</ion-note>
+      </ion-item>
+
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">Endereço</ion-label>
+        <ion-input [(ngModel)]="user.endereco" placeholder="Endereço"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="!editMode">
+        <ion-label><strong>Endereço:</strong></ion-label>
+        <ion-note>{{ user.endereco }}</ion-note>
+      </ion-item>
+
+      <ion-item *ngIf="editMode">
+        <ion-label position="stacked">Complemento</ion-label>
+        <ion-input [(ngModel)]="user.complemento" placeholder="Complemento"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="!editMode">
+        <ion-label><strong>Complemento:</strong></ion-label>
+        <ion-note>{{ user.complemento }}</ion-note>
+      </ion-item>
+
+      <ion-button expand="full" fill="outline" (click)="toggleEditMode()">
+        {{ editMode ? 'Cancelar edição' : 'Editar perfil' }}
       </ion-button>
-         </ion-item>
+
+      <ion-button *ngIf="editMode" expand="full" [disabled]="isLoadingProfile" (click)="salvarPerfil()">
+        {{ isLoadingProfile ? 'Salvando...' : 'Salvar perfil' }}
+      </ion-button>
+
+      <ion-button expand="full" fill="outline" (click)="togglePasswordForm()">
+        {{ showPasswordForm ? 'Ocultar alteração de senha' : 'Alterar senha' }}
+      </ion-button>
+
+      <ion-text color="success" *ngIf="profileMessage">
+        <p>{{ profileMessage }}</p>
+      </ion-text>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="showPasswordForm">
+    <ion-card-header>
+      <ion-card-title>Alterar senha</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="stacked">Senha atual</ion-label>
+        <ion-input [(ngModel)]="currentPassword" type="password" placeholder="Senha atual"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Nova senha</ion-label>
+        <ion-input [(ngModel)]="newPassword" type="password" placeholder="Nova senha"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Confirme a nova senha</ion-label>
+        <ion-input [(ngModel)]="confirmPassword" type="password" placeholder="Confirme a nova senha"></ion-input>
+      </ion-item>
+
+      <ion-button expand="full" [disabled]="isLoadingPassword" (click)="alterarSenha()">
+        {{ isLoadingPassword ? 'Alterando...' : 'Alterar senha' }}
+      </ion-button>
+
+      <ion-text color="danger" *ngIf="passwordMessage">
+        <p>{{ passwordMessage }}</p>
+      </ion-text>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Próximos agendamentos</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list *ngIf="proximosAgendamentos?.length; else semAgendamentos">
+        <ion-item *ngFor="let agendamento of proximosAgendamentos">
+          <ion-label>
+            <h2>{{ agendamento.psicologoEmail }}</h2>
+            <p>Data: {{ agendamento.dataHora | date:'dd/MM/yyyy' }} às {{ agendamento.dataHora | date:'HH:mm' }}</p>
+            <p>Status: {{ agendamento.status }}</p>
+          </ion-label>
+        </ion-item>
       </ion-list>
+      <ng-template #semAgendamentos>
+        <p>Você não possui agendamentos futuros.</p>
+      </ng-template>
+    </ion-card-content>
+  </ion-card>
 
-    </div>
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Buscar psicólogos</ion-card-title>
+      <ion-card-subtitle>Agende uma consulta com um profissional disponível</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-searchbar
+        [(ngModel)]="searchTerm"
+        placeholder="Buscar psicólogo por nome ou especialidade"
+        (ionInput)="filtrarPsicologos()">
+      </ion-searchbar>
 
-    <ion-button expand="block" color="danger" (click)="logout()">
+      <ion-list>
+        <ion-item *ngFor="let psicologo of psicologosFiltrados">
+          <ion-label>
+            <h2>{{ psicologo.nome }}</h2>
+            <p>{{ psicologo.especialidade }}</p>
+            <p>{{ psicologo.email }}</p>
+          </ion-label>
+          <ion-button fill="outline" slot="end" (click)="agendar(psicologo)">
+            Agendar
+          </ion-button>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+    7<ion-button expand="block" color="danger" (click)="logout()">
       Sair
     </ion-button>
-
-    <ion-button expand="block" routerLink="/proximas-consultas" class="ion-margin-top">
-    Minhas Próximas Consultas
-    </ion-button>
-
-  </div>
-
+  </ion-card>
 </ion-content>

@@ -22,6 +22,49 @@
       <p><strong>CRP:</strong> {{ user?.crp }}</p>
     </div>
 
+    <ion-card class="password-section">
+      <ion-card-header>
+        <ion-card-title>Trocar senha</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Senha atual</ion-label>
+          <ion-input [(ngModel)]="currentSenha" type="password"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Nova senha</ion-label>
+          <ion-input [(ngModel)]="novaSenha" type="password"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Confirmar nova senha</ion-label>
+          <ion-input [(ngModel)]="confirmarSenha" type="password"></ion-input>
+        </ion-item>
+
+        <ion-button expand="block" (click)="alterarSenha()">Atualizar senha</ion-button>
+        <ion-text *ngIf="senhaMessage" class="senha-message">{{ senhaMessage }}</ion-text>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-button expand="block" (click)="carregarPacientes()">
+      {{ mostrarPacientes ? 'Ocultar pacientes' : 'Ver meus pacientes' }}
+    </ion-button>
+
+    <ion-list *ngIf="mostrarPacientes">
+      <ion-item *ngFor="let paciente of pacientes" [routerLink]="['/detalhes-paciente', paciente.email]">
+        <ion-avatar slot="start">
+          <img [src]="paciente.foto || 'assets/avatar.png'" />
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ paciente.nome }} {{ paciente.sobrenome }}</h2>
+          <p>{{ paciente.email }}</p>
+        </ion-label>
+        <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+      </ion-item>
+      <p *ngIf="pacientes.length === 0" class="ion-text-center ion-padding">Nenhum paciente associado ainda.</p>
+    </ion-list>
+
     <div class="descricao">
       <p>{{ user?.descricao || 'Adicione uma descrição sobre sua experiência...' }}</p>
     </div>

@@ -29,6 +29,11 @@ const routes: Routes = [
     loadComponent: () =>
       import('./pages/auth/registro/registro.page').then(m => m.RegistroPage)
   },
+  {
+    path: 'esqueci-senha',
+    loadComponent: () =>
+      import('./pages/auth/esqueci-senha/esqueci-senha.page').then(m => m.EsqueciSenhaPage)
+  },
 
   // PERFIL PACIENTE
   {
@@ -79,6 +84,10 @@ const routes: Routes = [
   {
     path: 'detalhes-psicologo/:id',
     loadComponent: () => import('./pages/detalhes-psicologo/detalhes-psicologo.page').then(m => m.DetalhesPsicologoPage)
+  },
+  {
+    path: 'detalhes-paciente/:email',
+    loadComponent: () => import('./pages/detalhes-paciente/detalhes-paciente.page').then(m => m.DetalhesPacientePage)
   },
 
 ];
