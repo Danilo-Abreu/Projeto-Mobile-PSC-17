@@ -39,6 +39,19 @@
 </ion-item>
 
   <ion-item>
+    <ion-label position="stacked">Foto de perfil</ion-label>
+    <input type="file" accept="image/*" (change)="onFotoSelecionada($event)" />
+  </ion-item>
+
+  <ion-button expand="block" fill="outline" (click)="takePhoto()">
+    Usar câmera
+  </ion-button>
+
+  <div *ngIf="formData.foto" class="photo-preview">
+    <img [src]="formData.foto" alt="Preview da foto" />
+  </div>
+
+  <ion-item>
   <ion-label position="floating">Telefone *</ion-label>
   <ion-input
     [(ngModel)]="formData.telefone"

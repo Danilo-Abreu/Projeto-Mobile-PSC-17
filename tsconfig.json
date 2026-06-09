@@ -2,12 +2,11 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
+      "@app/*": ["src/app/*"],
       "@services/*": ["src/app/services/*"],
       "@pages/*": ["src/app/pages/*"],
-      "@app/*": ["src/app/*"]
     },
     "outDir": "./dist/out-tsc",
     "rootDir": "./src",
@@ -21,7 +20,7 @@
     "sourceMap": true,
     "declaration": false,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "es2022",
     "module": "es2020",

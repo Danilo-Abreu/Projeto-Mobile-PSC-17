@@ -1,6 +1,7 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { AuthService, User } from 'src/app/services/auth.service';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
@@ -27,7 +28,8 @@ export class RegistroPage implements OnInit {
     cep: '',
     endereco: '',
     complemento: '',
-    tipoUsuario: 'paciente'
+    tipoUsuario: 'paciente',
+    foto: ''
   };
 
   confirmarSenha: string = '';
@@ -214,6 +216,38 @@ export class RegistroPage implements OnInit {
     } finally {
       this.cepLoading = false;
     }
+  }
+
+  // =========================
+  // FOTO DE PERFIL
+  // =========================
+
+  async takePhoto() {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Prompt
+      });
+
+      this.formData.foto = image.dataUrl || '';
+    } catch (error) {
+      console.error('Erro ao capturar foto:', error);
+    }
+  }
+
+  async onFotoSelecionada(event: any) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.formData.foto = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   }
 
   // =========================

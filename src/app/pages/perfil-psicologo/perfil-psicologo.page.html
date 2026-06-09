@@ -16,13 +16,73 @@
       <h2>{{ user?.nome }}</h2>
     </div>
 
-    <div class="info">
+    <div *ngIf="!editMode" class="info">
       <p><strong>Email:</strong> {{ user?.email }}</p>
       <p><strong>Especialidade:</strong> {{ user?.especialidade }}</p>
       <p><strong>CRP:</strong> {{ user?.crp }}</p>
+      <p *ngIf="user?.telefone"><strong>Telefone:</strong> {{ user?.telefone }}</p>
+      <p *ngIf="user?.dataNascimento"><strong>Data de nascimento:</strong> {{ user?.dataNascimento }}</p>
+      <p><strong>Descrição:</strong> {{ user?.descricao || 'Adicione uma descrição sobre sua experiência...' }}</p>
     </div>
 
-    <ion-card class="password-section">
+    <div *ngIf="editMode" class="edit-section">
+      <ion-item>
+        <ion-label position="stacked">Nome</ion-label>
+        <ion-input [(ngModel)]="user.nome"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Sobrenome</ion-label>
+        <ion-input [(ngModel)]="user.sobrenome"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Telefone</ion-label>
+        <ion-input [(ngModel)]="user.telefone"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Especialidade</ion-label>
+        <ion-input [(ngModel)]="user.especialidade"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">CRP</ion-label>
+        <ion-input [(ngModel)]="user.crp"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Descrição</ion-label>
+        <ion-textarea [(ngModel)]="user.descricao"></ion-textarea>
+      </ion-item>
+
+      <ion-item *ngIf="user?.dataNascimento">
+        <ion-label position="stacked">Data de nascimento</ion-label>
+        <ion-button fill="outline" size="small" (click)="showDatepicker = !showDatepicker">
+          {{ showDatepicker ? 'Ocultar calendário' : 'Editar data' }}
+        </ion-button>
+      </ion-item>
+
+      <ion-item *ngIf="showDatepicker">
+        <ion-datetime display-format="DD/MM/YYYY" picker-format="DD/MM/YYYY" [(ngModel)]="user.dataNascimento"></ion-datetime>
+      </ion-item>
+
+      <ion-button expand="full" fill="solid" (click)="atualizarPerfil()">Salvar informações</ion-button>
+    </div>
+
+    <ion-button expand="full" fill="outline" (click)="toggleEditMode()">
+      {{ editMode ? 'Cancelar edição' : 'Editar perfil' }}
+    </ion-button>
+
+    <ion-button expand="full" fill="outline" (click)="toggleSenhaForm()">
+      {{ mostrarSenha ? 'Cancelar alteração de senha' : 'Alterar senha' }}
+    </ion-button>
+
+    <ion-text color="success" *ngIf="profileMessage">
+      <p>{{ profileMessage }}</p>
+    </ion-text>
+
+    <ion-card class="password-section" *ngIf="mostrarSenha">
       <ion-card-header>
         <ion-card-title>Trocar senha</ion-card-title>
       </ion-card-header>
@@ -64,10 +124,6 @@
       </ion-item>
       <p *ngIf="pacientes.length === 0" class="ion-text-center ion-padding">Nenhum paciente associado ainda.</p>
     </ion-list>
-
-    <div class="descricao">
-      <p>{{ user?.descricao || 'Adicione uma descrição sobre sua experiência...' }}</p>
-    </div>
 
     <ion-button expand="block" color="danger" (click)="logout()">
       Sair
