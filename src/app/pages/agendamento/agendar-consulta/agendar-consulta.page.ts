@@ -2,10 +2,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ToastController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AgendamentoService, Agendamento } from 'src/app/services/agendamento.service';
 import { AuthService, User } from 'src/app/services/auth.service';
+import { GoogleCalendarService } from 'src/app/services/google-calendar.service';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 
 @Component({
@@ -24,6 +26,7 @@ export class AgendarConsultaPage implements OnInit {
   horaConsulta: string = ''; // Usar string para ion-datetime
   duracaoMinutos: number = 50; // Padrão de 50 minutos
   observacoes: string = '';
+  googleAuthorized: boolean = false;
   isLoading: boolean = false;
   errorMessage: string = '';
 
@@ -32,7 +35,9 @@ export class AgendarConsultaPage implements OnInit {
     private router: Router,
     private agendamentoService: AgendamentoService,
     private authService: AuthService,
-    private firestore: AngularFirestore // Injetar AngularFirestore para buscar dados do psicólogo
+    private googleCalendarService: GoogleCalendarService,
+    private firestore: AngularFirestore, // Injetar AngularFirestore para buscar dados do psicólogo
+    private toastCtrl: ToastController
   ) { }
 
   ngOnInit() {
@@ -51,6 +56,13 @@ export class AgendarConsultaPage implements OnInit {
     } else {
       this.errorMessage = 'E-mail do psicólogo não fornecido.';
     }
+
+    this.initGoogleCalendar();
+  }
+
+  private async initGoogleCalendar() {
+    await this.googleCalendarService.handleAuthCallback();
+    this.googleAuthorized = await this.googleCalendarService.ensureAuthorized();
   }
 
   async loadPsicologoInfo(email: string) {
@@ -82,6 +94,27 @@ export class AgendarConsultaPage implements OnInit {
       const [horas, minutos] = this.horaConsulta.split(':').map(Number);
       const dataHoraAgendamento = new Date(ano, mes - 1, dia, horas, minutos);
 
+      // Verificar disponibilidade do psicólogo para o dia
+      if (this.psicologoEmail) {
+        const agendaDoDia = await firstValueFrom(this.agendamentoService.getAgendaDiariaPsicologo(this.psicologoEmail, dataHoraAgendamento));
+        // checar conflitos por sobreposição
+        const novoInicio = dataHoraAgendamento.getTime();
+        const novoFim = novoInicio + this.duracaoMinutos * 60000;
+        const conflito = (agendaDoDia || []).some(ag => {
+          const inicioExistente = (ag.dataHora as any) instanceof Date ? (ag.dataHora as Date).getTime() : new Date(ag.dataHora).getTime();
+          const fimExistente = inicioExistente + (ag.duracaoMinutos || 50) * 60000;
+          return Math.max(inicioExistente, novoInicio) < Math.min(fimExistente, novoFim);
+        });
+
+        if (conflito) {
+          this.errorMessage = 'Horário indisponível no dia selecionado. Escolha outro horário.';
+          const toast = await this.toastCtrl.create({ message: this.errorMessage, duration: 3000, color: 'danger' });
+          await toast.present();
+          this.isLoading = false;
+          return;
+        }
+      }
+
       const novoAgendamento: Agendamento = {
         pacienteEmail: this.pacienteEmail,
         psicologoEmail: this.psicologoEmail,
@@ -93,12 +126,72 @@ export class AgendarConsultaPage implements OnInit {
       };
 
       await this.agendamentoService.criarAgendamento(novoAgendamento);
-      this.router.navigate(['/proximas-consultas']); // Redireciona para a lista de próximas consultas
+
+      if (this.googleAuthorized) {
+        try {
+          await this.googleCalendarService.createEvent(this.buildGoogleEvent(novoAgendamento));
+          const calendarToast = await this.toastCtrl.create({
+            message: 'Evento criado também no Google Agenda.',
+            duration: 2500,
+            position: 'bottom',
+            color: 'success'
+          });
+          await calendarToast.present();
+        } catch (error) {
+          console.error('Erro ao criar evento no Google Agenda:', error);
+          const calendarError = await this.toastCtrl.create({
+            message: 'Não foi possível salvar no Google Agenda. O agendamento foi criado localmente.',
+            duration: 3000,
+            position: 'bottom',
+            color: 'warning'
+          });
+          await calendarError.present();
+        }
+      }
+
+      const toast = await this.toastCtrl.create({
+        message: 'Agendamento confirmado com sucesso.',
+        duration: 2500,
+        position: 'bottom'
+      });
+      await toast.present();
+      this.router.navigate(['/proximas-consultas']);
     } catch (error) {
       console.error('Erro ao agendar consulta:', error);
       this.errorMessage = 'Erro ao agendar consulta. Tente novamente.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 2500,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
     } finally {
       this.isLoading = false;
     }
+  }
+
+  async conectarGoogleAgenda() {
+    await this.googleCalendarService.authorize(this.router.url);
+  }
+
+  private buildGoogleEvent(agendamento: Agendamento) {
+    const start = new Date(agendamento.dataHora);
+    const end = new Date(start.getTime() + agendamento.duracaoMinutos * 60000);
+
+    return {
+      summary: `Consulta com ${this.psicologoNome}`,
+      description: agendamento.observacoes || 'Consulta agendada pelo app.',
+      start: {
+        dateTime: start.toISOString()
+      },
+      end: {
+        dateTime: end.toISOString()
+      },
+      attendees: [
+        { email: agendamento.pacienteEmail },
+        { email: agendamento.psicologoEmail }
+      ]
+    };
   }
 }

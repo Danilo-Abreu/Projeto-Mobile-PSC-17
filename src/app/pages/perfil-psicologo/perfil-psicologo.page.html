@@ -1,138 +1,115 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title class="ion-text-center">Perfil</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Perfil do Psicólogo</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-
-  <div class="perfil-card">
-
+  <ion-card class="perfil-card">
     <div class="topo">
-      <div class="foto" (click)="tirarFoto()">
-        <img [src]="user?.foto || 'assets/avatar.png'" />
+      <div class="foto">
+        <img [src]="user?.foto || 'assets/avatar.png'" alt="Foto do psicólogo" />
       </div>
-
-      <h2>{{ user?.nome }}</h2>
+      <div class="foto-actions" *ngIf="editMode">
+          <ion-button size="small" expand="block" fill="outline" (click)="tirarFoto()">Tirar foto</ion-button>
+          <ion-button size="small" expand="block" fill="outline" (click)="pickPhotoFromGallery()">Escolher da galeria</ion-button>
+          <input type="file" accept="image/*" (change)="onFotoSelecionada($event)" />
+          <div *ngIf="newPhotoTemp" class="preview">
+            <img [src]="newPhotoTemp" alt="Preview" />
+            <ion-button size="small" expand="block" (click)="confirmarFoto()">Confirmar</ion-button>
+            <ion-button size="small" expand="block" fill="clear" (click)="cancelarNovaFoto()">Cancelar</ion-button>
+          </div>
+      </div>
+      <h2>{{ user?.nome }} {{ user?.sobrenome }}</h2>
+      <p class="subtitle">Psicólogo</p>
     </div>
 
-    <div *ngIf="!editMode" class="info">
-      <p><strong>Email:</strong> {{ user?.email }}</p>
-      <p><strong>Especialidade:</strong> {{ user?.especialidade }}</p>
-      <p><strong>CRP:</strong> {{ user?.crp }}</p>
-      <p *ngIf="user?.telefone"><strong>Telefone:</strong> {{ user?.telefone }}</p>
-      <p *ngIf="user?.dataNascimento"><strong>Data de nascimento:</strong> {{ user?.dataNascimento }}</p>
-      <p><strong>Descrição:</strong> {{ user?.descricao || 'Adicione uma descrição sobre sua experiência...' }}</p>
+    <div class="info">
+      <p><strong>Email</strong><span>{{ user?.email }}</span></p>
+      <p *ngIf="user?.especialidade"><strong>Especialidade</strong><span>{{ user?.especialidade }}</span></p>
+      <p *ngIf="user?.crp"><strong>CRP</strong><span>{{ user?.crp }}</span></p>
+      <p *ngIf="user?.telefone"><strong>Telefone</strong><span>{{ user?.telefone }}</span></p>
+      <p *ngIf="user?.dataNascimento"><strong>Data de nascimento</strong><span>{{ user?.dataNascimento }}</span></p>
     </div>
 
-    <div *ngIf="editMode" class="edit-section">
+    <ion-button expand="full" fill="outline" (click)="toggleEditMode()">
+      {{ editMode ? 'Fechar edição' : 'Editar perfil' }}
+    </ion-button>
+  </ion-card>
+
+  <ion-card *ngIf="editMode">
+    <ion-card-header>
+      <ion-card-title>Editar perfil</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
       <ion-item>
         <ion-label position="stacked">Nome</ion-label>
         <ion-input [(ngModel)]="user.nome"></ion-input>
       </ion-item>
-
       <ion-item>
         <ion-label position="stacked">Sobrenome</ion-label>
         <ion-input [(ngModel)]="user.sobrenome"></ion-input>
       </ion-item>
-
       <ion-item>
         <ion-label position="stacked">Telefone</ion-label>
         <ion-input [(ngModel)]="user.telefone"></ion-input>
       </ion-item>
-
       <ion-item>
         <ion-label position="stacked">Especialidade</ion-label>
         <ion-input [(ngModel)]="user.especialidade"></ion-input>
       </ion-item>
-
       <ion-item>
         <ion-label position="stacked">CRP</ion-label>
         <ion-input [(ngModel)]="user.crp"></ion-input>
       </ion-item>
-
       <ion-item>
         <ion-label position="stacked">Descrição</ion-label>
         <ion-textarea [(ngModel)]="user.descricao"></ion-textarea>
       </ion-item>
-
-      <ion-item *ngIf="user?.dataNascimento">
-        <ion-label position="stacked">Data de nascimento</ion-label>
-        <ion-button fill="outline" size="small" (click)="showDatepicker = !showDatepicker">
-          {{ showDatepicker ? 'Ocultar calendário' : 'Editar data' }}
-        </ion-button>
-      </ion-item>
-
-      <ion-item *ngIf="showDatepicker">
-        <ion-datetime display-format="DD/MM/YYYY" picker-format="DD/MM/YYYY" [(ngModel)]="user.dataNascimento"></ion-datetime>
-      </ion-item>
-
       <ion-button expand="full" fill="solid" (click)="atualizarPerfil()">Salvar informações</ion-button>
-    </div>
+    </ion-card-content>
+  </ion-card>
 
-    <ion-button expand="full" fill="outline" (click)="toggleEditMode()">
-      {{ editMode ? 'Cancelar edição' : 'Editar perfil' }}
-    </ion-button>
+  <ion-card class="action-card">
+    <ion-card-header>
+      <ion-card-title>Ações</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="full" fill="outline" (click)="carregarPacientes()">
+        {{ mostrarPacientes ? 'Ocultar pacientes' : 'Ver meus pacientes' }}
+      </ion-button>
+      <ion-button expand="full" fill="outline" routerLink="/agenda-psicologo">
+        Minha agenda
+      </ion-button>
+      <ion-button expand="full" color="danger" (click)="logout()">
+        Sair
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
 
-    <ion-button expand="full" fill="outline" (click)="toggleSenhaForm()">
-      {{ mostrarSenha ? 'Cancelar alteração de senha' : 'Alterar senha' }}
-    </ion-button>
-
-    <ion-text color="success" *ngIf="profileMessage">
-      <p>{{ profileMessage }}</p>
-    </ion-text>
-
-    <ion-card class="password-section" *ngIf="mostrarSenha">
-      <ion-card-header>
-        <ion-card-title>Trocar senha</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-item>
-          <ion-label position="floating">Senha atual</ion-label>
-          <ion-input [(ngModel)]="currentSenha" type="password"></ion-input>
+  <ion-card *ngIf="mostrarPacientes">
+    <ion-card-header>
+      <ion-card-title>Meus pacientes</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let paciente of pacientes" [routerLink]="['/detalhes-paciente', paciente.email]">
+          <ion-avatar slot="start">
+            <img [src]="paciente.foto || 'assets/avatar.png'" />
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ paciente.nome }} {{ paciente.sobrenome }}</h2>
+            <p>{{ paciente.email }}</p>
+          </ion-label>
+          <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
         </ion-item>
-
-        <ion-item>
-          <ion-label position="floating">Nova senha</ion-label>
-          <ion-input [(ngModel)]="novaSenha" type="password"></ion-input>
-        </ion-item>
-
-        <ion-item>
-          <ion-label position="floating">Confirmar nova senha</ion-label>
-          <ion-input [(ngModel)]="confirmarSenha" type="password"></ion-input>
-        </ion-item>
-
-        <ion-button expand="block" (click)="alterarSenha()">Atualizar senha</ion-button>
-        <ion-text *ngIf="senhaMessage" class="senha-message">{{ senhaMessage }}</ion-text>
-      </ion-card-content>
-    </ion-card>
-
-    <ion-button expand="block" (click)="carregarPacientes()">
-      {{ mostrarPacientes ? 'Ocultar pacientes' : 'Ver meus pacientes' }}
-    </ion-button>
-
-    <ion-list *ngIf="mostrarPacientes">
-      <ion-item *ngFor="let paciente of pacientes" [routerLink]="['/detalhes-paciente', paciente.email]">
-        <ion-avatar slot="start">
-          <img [src]="paciente.foto || 'assets/avatar.png'" />
-        </ion-avatar>
-        <ion-label>
-          <h2>{{ paciente.nome }} {{ paciente.sobrenome }}</h2>
-          <p>{{ paciente.email }}</p>
-        </ion-label>
-        <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
-      </ion-item>
-      <p *ngIf="pacientes.length === 0" class="ion-text-center ion-padding">Nenhum paciente associado ainda.</p>
-    </ion-list>
-
-    <ion-button expand="block" color="danger" (click)="logout()">
-      Sair
-    </ion-button>
-
-    <ion-button expand="block" routerLink="/agenda-psicologo" class="ion-margin-top">
-      Minha Agenda
-    </ion-button>
-
-  </div>
-
+      </ion-list>
+      <div *ngIf="pacientes.length === 0" class="ion-text-center ion-padding">
+        Nenhum paciente associado ainda.
+      </div>
+    </ion-card-content>
+  </ion-card>
 </ion-content>

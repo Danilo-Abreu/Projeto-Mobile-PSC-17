@@ -27,6 +27,7 @@ export class PerfilPsicologoPage implements OnInit {
   confirmarSenha: string = '';
   senhaMessage: string = '';
   profileMessage: string = '';
+  newPhotoTemp: string | null = null;
 
   constructor(
     private auth: AuthService,
@@ -61,18 +62,57 @@ export class PerfilPsicologoPage implements OnInit {
         quality: 80,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt
+        source: CameraSource.Camera
       });
 
-      const fotoBase64 = image.dataUrl;
-      this.user.foto = fotoBase64;
-      await this.auth.updateUser(this.user);
-      this.profileMessage = 'Foto atualizada com sucesso.';
-      await this.showToast(this.profileMessage);
+      this.newPhotoTemp = image.dataUrl || '';
     } catch (error) {
       console.error('Erro ao tirar foto:', error);
       this.profileMessage = 'Não foi possível salvar a foto.';
     }
+  }
+
+  async pickPhotoFromGallery() {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos
+      });
+      this.newPhotoTemp = image.dataUrl || '';
+    } catch (error) {
+      console.error('Erro ao selecionar foto:', error);
+      this.profileMessage = 'Não foi possível selecionar a foto.';
+    }
+  }
+
+  async confirmarFoto() {
+    if (!this.newPhotoTemp) return;
+    this.user.foto = this.newPhotoTemp;
+    try {
+      await this.auth.updateUser(this.user);
+      this.profileMessage = 'Foto atualizada com sucesso.';
+      this.newPhotoTemp = null;
+      await this.showToast(this.profileMessage);
+    } catch (error) {
+      console.error('Erro ao salvar foto:', error);
+      this.profileMessage = 'Não foi possível salvar a foto.';
+    }
+  }
+
+  cancelarNovaFoto() {
+    this.newPhotoTemp = null;
+  }
+
+  async onFotoSelecionada(event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.newPhotoTemp = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   }
 
   toggleSenhaForm() {

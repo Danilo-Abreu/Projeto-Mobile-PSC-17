@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -15,7 +15,7 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [IonicModule, FormsModule, CommonModule, RouterLink] 
 })
-export class RegistroPage implements OnInit {
+export class RegistroPage {
 
   formData: User = {
     nome: '',
@@ -42,8 +42,6 @@ export class RegistroPage implements OnInit {
     private router: Router,
     private http: HttpClient
   ) {}
-
-  ngOnInit() {}
 
   // =========================
   // MÁSCARAS

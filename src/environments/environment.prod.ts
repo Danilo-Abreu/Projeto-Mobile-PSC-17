@@ -7,5 +7,14 @@
     storageBucket: "projetomobile-860f3.firebasestorage.app",
     messagingSenderId: "1084781020290",
     appId: "1:1084781020290:web:9ba074b9d2e18b6db4e09b"
+  },
+  googleCalendar: {
+    clientId: 'REPLACE_WITH_GOOGLE_CLIENT_ID',
+    clientSecret: '',
+    redirectUri: 'https://YOUR_PRODUCTION_URL',
+    scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+    authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenEndpoint: 'https://oauth2.googleapis.com/token',
+    apiBaseUrl: 'https://www.googleapis.com/calendar/v3'
   }
 };

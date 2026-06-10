@@ -1,11 +1,10 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { AuthService, User } from '../../services/auth.service';
-import { PsicologoService } from '../../services/psicologo.service';
 import { AgendamentoService } from '../../services/agendamento.service';
 
 @Component({
@@ -30,12 +29,10 @@ export class PerfilPacientePage implements OnInit {
     tipoUsuario: 'paciente',
     foto: ''
   };
-  searchTerm = '';
-  psicologos: any[] = [];
-  psicologosFiltrados: any[] = [];
   currentPassword = '';
   newPassword = '';
   confirmPassword = '';
+  newPhotoTemp: string | null = null;
   profileMessage = '';
   passwordMessage = '';
   isLoadingProfile = false;
@@ -47,7 +44,6 @@ export class PerfilPacientePage implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private psicologoService: PsicologoService,
     private agendamentoService: AgendamentoService,
     private router: Router,
     private toastCtrl: ToastController
@@ -55,7 +51,6 @@ export class PerfilPacientePage implements OnInit {
 
   ngOnInit() {
     this.carregarUsuario();
-    this.carregarPsicologos();
     this.carregarProximosAgendamentos();
   }
 
@@ -74,13 +69,6 @@ export class PerfilPacientePage implements OnInit {
     });
   }
 
-  carregarPsicologos() {
-    this.psicologoService.obterTodos().subscribe((dados: any[]) => {
-      this.psicologos = dados;
-      this.psicologosFiltrados = dados;
-    });
-  }
-
   carregarProximosAgendamentos() {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser || !currentUser.email) {
@@ -90,14 +78,6 @@ export class PerfilPacientePage implements OnInit {
     this.agendamentoService.getProximosAgendamentos(currentUser.email, 'paciente').subscribe((agendamentos: any[]) => {
       this.proximosAgendamentos = agendamentos;
     });
-  }
-
-  filtrarPsicologos() {
-    const termo = this.searchTerm.toLowerCase();
-    this.psicologosFiltrados = this.psicologos.filter(p =>
-      p.nome?.toLowerCase().includes(termo) ||
-      p.especialidade?.toLowerCase().includes(termo)
-    );
   }
 
   async salvarPerfil() {
@@ -129,16 +109,8 @@ export class PerfilPacientePage implements OnInit {
     }
 
     const reader = new FileReader();
-    reader.onload = async () => {
-      this.user.foto = reader.result as string;
-      try {
-        await this.authService.updateUser(this.user);
-        this.profileMessage = 'Foto atualizada com sucesso.';
-        await this.showToast(this.profileMessage);
-      } catch (error) {
-        console.error('Erro ao salvar foto:', error);
-        this.profileMessage = 'Não foi possível salvar a foto. Tente novamente.';
-      }
+    reader.onload = () => {
+      this.newPhotoTemp = reader.result as string;
     };
     reader.readAsDataURL(file);
   }
@@ -149,17 +121,52 @@ export class PerfilPacientePage implements OnInit {
         quality: 80,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt
+        source: CameraSource.Camera
       });
 
-      this.user.foto = image.dataUrl || '';
-      await this.authService.updateUser(this.user);
-      this.profileMessage = 'Foto capturada e salva com sucesso.';
-      await this.showToast(this.profileMessage);
+      this.newPhotoTemp = image.dataUrl || '';
     } catch (error) {
       console.error('Erro ao capturar foto:', error);
       this.profileMessage = 'Não foi possível capturar a foto.';
     }
+  }
+
+  async pickPhotoFromGallery() {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos
+      });
+      this.newPhotoTemp = image.dataUrl || '';
+    } catch (error) {
+      console.error('Erro ao selecionar foto:', error);
+      this.profileMessage = 'Não foi possível selecionar a foto.';
+    }
+  }
+
+  async confirmarFoto() {
+    if (!this.newPhotoTemp) return;
+    this.user.foto = this.newPhotoTemp;
+    try {
+      await this.authService.updateUser(this.user);
+      this.profileMessage = 'Foto atualizada com sucesso.';
+      this.newPhotoTemp = null;
+      await this.showToast(this.profileMessage);
+    } catch (error) {
+      console.error('Erro ao salvar foto:', error);
+      this.profileMessage = 'Não foi possível salvar a foto. Tente novamente.';
+    }
+  }
+
+  cancelarNovaFoto() {
+    this.newPhotoTemp = null;
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   togglePasswordForm() {
@@ -208,11 +215,12 @@ export class PerfilPacientePage implements OnInit {
     }
   }
 
-  agendar(psicologo: any) {
-    if (!psicologo?.email) {
-      return;
-    }
-    this.router.navigate(['/agendar-consulta', psicologo.email]);
+  verPsicologos() {
+    this.router.navigate(['/lista-psicologos']);
+  }
+
+  verAgendamentos() {
+    this.router.navigate(['/proximas-consultas']);
   }
 
   toIsoDate(date: string): string {

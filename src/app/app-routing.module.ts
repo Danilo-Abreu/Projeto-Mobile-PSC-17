@@ -51,9 +51,9 @@ const routes: Routes = [
       .then(m => m.PerfilPsicologoPage),
     //canActivate: [AuthGuard, RoleGuard],
     data: { role: 'psicologo' }
-  }
+  },
 
-  ,{
+  {
     path: 'agendar-consulta/:psicologoEmail', // Passa o e-mail do psicólogo como parâmetro
     loadComponent: () =>
       import('./pages/agendamento/agendar-consulta/agendar-consulta.page').then(m => m.AgendarConsultaPage)
@@ -63,6 +63,11 @@ const routes: Routes = [
     path: 'agenda-psicologo',
     loadComponent: () =>
       import('./pages/agendamento/agenda-psicologo/agenda-psicologo.page').then(m => m.AgendaPsicologoPage)
+  },
+
+  {
+    path: 'google-oauth-callback',
+    loadComponent: () => import('./pages/google-oauth-callback/google-oauth-callback.page').then(m => m.GoogleOauthCallbackPage)
   },
 
   {
