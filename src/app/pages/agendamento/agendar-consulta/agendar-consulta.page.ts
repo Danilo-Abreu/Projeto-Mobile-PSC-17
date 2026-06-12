@@ -66,26 +66,11 @@ export class AgendarConsultaPage implements OnInit {
 
   private async initGoogleCalendar() {
     try {
+      await this.googleCalendarService.handleAuthCallback();
       this.googleAuthorized = await this.googleCalendarService.ensureAuthorized();
-      if (this.googleAuthorized) {
-        console.log('Google Calendar autorizado');
-      } else {
-        console.log('Google Calendar não autorizado. Usuário precisa fazer login.');
-      }
-    } catch (error: any) {
-      console.error('Erro ao inicializar Google Calendar:', error?.message || error);
+    } catch (error) {
+      console.error('Erro ao inicializar Google Calendar:', error);
       this.googleAuthorized = false;
-      
-      // Mostrar mensagem de erro se necessário
-      const errorMessage = error?.message || 'Erro ao inicializar Google Calendar';
-      if (errorMessage.includes('Sessão expirada')) {
-        const toast = await this.toastCtrl.create({
-          message: 'Sessão expirada. Por favor, conecte ao Google Calendar novamente.',
-          duration: 4000,
-          color: 'warning'
-        });
-        await toast.present();
-      }
     }
   }
 
@@ -265,6 +250,7 @@ export class AgendarConsultaPage implements OnInit {
             color: 'success'
           });
           await calendarToast.present();
+<<<<<<< HEAD
         } catch (googleError: any) {
           const googleErrorCode = googleError?.code || 'UNKNOWN';
           const googleErrorMsg = googleError?.message || 'Erro ao sincronizar com Google Agenda';
@@ -278,6 +264,16 @@ export class AgendarConsultaPage implements OnInit {
           const calendarWarningToast = await this.toastCtrl.create({
             message: `⚠️ Google Calendar: ${googleErrorMsg}. O agendamento foi criado localmente.`,
             duration: 5000,
+=======
+        } catch (error: any) {
+          console.error('Erro ao criar evento no Google Agenda:', error, error?.error ?? error);
+          const message = error?.status === 400
+            ? 'Erro 400 no Google Agenda. Verifique se o token é válido e se as URLs estão autorizadas.'
+            : 'Não foi possível salvar no Google Agenda. O agendamento foi criado localmente.';
+          const calendarError = await this.toastCtrl.create({
+            message,
+            duration: 4000,
+>>>>>>> 70b41d3 (Danilo)
             position: 'bottom',
             color: 'warning'
           });
@@ -343,6 +339,7 @@ export class AgendarConsultaPage implements OnInit {
     this.isConnecting = true;
 
     try {
+<<<<<<< HEAD
       // Fazer logout primeiro se já estava conectado (para forçar seleção de email)
       if (this.googleAuthorized) {
         this.googleCalendarService.logout();
@@ -370,12 +367,24 @@ export class AgendarConsultaPage implements OnInit {
       const toast = await this.toastCtrl.create({
         message: this.errorMessage,
         duration: 4000,
+=======
+      const returnUrl = window.location.pathname + window.location.search;
+      console.log('Iniciando autorização Google Agenda, returnUrl=', returnUrl);
+      await this.googleCalendarService.authorize(returnUrl);
+    } catch (error) {
+      console.error('Erro ao iniciar autorização Google Agenda:', error);
+      this.errorMessage = 'Não foi possível iniciar o login no Google Agenda. Tente novamente.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+>>>>>>> 70b41d3 (Danilo)
         color: 'danger'
       });
       await toast.present();
     } finally {
       this.isConnecting = false;
     }
+<<<<<<< HEAD
   }
 
   async desconectarGoogleAgenda() {
@@ -388,6 +397,8 @@ export class AgendarConsultaPage implements OnInit {
       color: 'success'
     });
     await toast.present();
+=======
+>>>>>>> 70b41d3 (Danilo)
   }
 
   private buildGoogleEvent(agendamento: Agendamento) {
