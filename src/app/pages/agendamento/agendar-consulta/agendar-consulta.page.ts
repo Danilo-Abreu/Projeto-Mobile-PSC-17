@@ -28,6 +28,7 @@ export class AgendarConsultaPage implements OnInit {
   observacoes: string = '';
   googleAuthorized: boolean = false;
   isLoading: boolean = false;
+  isConnecting: boolean = false;
   errorMessage: string = '';
 
   constructor(
@@ -61,8 +62,13 @@ export class AgendarConsultaPage implements OnInit {
   }
 
   private async initGoogleCalendar() {
-    await this.googleCalendarService.handleAuthCallback();
-    this.googleAuthorized = await this.googleCalendarService.ensureAuthorized();
+    try {
+      await this.googleCalendarService.handleAuthCallback();
+      this.googleAuthorized = await this.googleCalendarService.ensureAuthorized();
+    } catch (error) {
+      console.error('Erro ao inicializar Google Calendar:', error);
+      this.googleAuthorized = false;
+    }
   }
 
   async loadPsicologoInfo(email: string) {
@@ -137,11 +143,14 @@ export class AgendarConsultaPage implements OnInit {
             color: 'success'
           });
           await calendarToast.present();
-        } catch (error) {
-          console.error('Erro ao criar evento no Google Agenda:', error);
+        } catch (error: any) {
+          console.error('Erro ao criar evento no Google Agenda:', error, error?.error ?? error);
+          const message = error?.status === 400
+            ? 'Erro 400 no Google Agenda. Verifique se o token é válido e se as URLs estão autorizadas.'
+            : 'Não foi possível salvar no Google Agenda. O agendamento foi criado localmente.';
           const calendarError = await this.toastCtrl.create({
-            message: 'Não foi possível salvar no Google Agenda. O agendamento foi criado localmente.',
-            duration: 3000,
+            message,
+            duration: 4000,
             position: 'bottom',
             color: 'warning'
           });
@@ -171,8 +180,33 @@ export class AgendarConsultaPage implements OnInit {
     }
   }
 
-  async conectarGoogleAgenda() {
-    await this.googleCalendarService.authorize(this.router.url);
+  async conectarGoogleAgenda(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.isLoading || this.isConnecting) {
+      return;
+    }
+
+    this.errorMessage = '';
+    this.isConnecting = true;
+
+    try {
+      const returnUrl = window.location.pathname + window.location.search;
+      console.log('Iniciando autorização Google Agenda, returnUrl=', returnUrl);
+      await this.googleCalendarService.authorize(returnUrl);
+    } catch (error) {
+      console.error('Erro ao iniciar autorização Google Agenda:', error);
+      this.errorMessage = 'Não foi possível iniciar o login no Google Agenda. Tente novamente.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+        color: 'danger'
+      });
+      await toast.present();
+    } finally {
+      this.isConnecting = false;
+    }
   }
 
   private buildGoogleEvent(agendamento: Agendamento) {

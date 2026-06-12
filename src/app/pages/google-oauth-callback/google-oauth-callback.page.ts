@@ -66,6 +66,16 @@ export class GoogleOauthCallbackPage implements OnInit {
       }
     }
 
+    if (returnUrl === null) {
+      this.message = 'Falha ao conectar com o Google Agenda. Verifique os logs e tente novamente.';
+      await this.toastCtrl.create({
+        message: 'Falha ao autenticar no Google Agenda.',
+        duration: 3000,
+        color: 'danger'
+      }).then(toast => toast.present());
+      return;
+    }
+
     await this.toastCtrl.create({
       message: 'Autenticação concluída no Google Agenda.',
       duration: 2000,

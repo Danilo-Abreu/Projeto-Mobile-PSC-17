@@ -27,6 +27,7 @@ export class GoogleCalendarService {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
+    console.log('Google OAuth callback params:', { code, state });
     if (!code) {
       return null;
     }
@@ -49,7 +50,7 @@ export class GoogleCalendarService {
 
       return state ? state : storedReturnUrl;
     } catch (error: any) {
-      console.error('Erro ao trocar código OAuth por token:', error, error.error);
+      console.error('Erro ao trocar código OAuth por token:', error, error?.error ?? error);
       return null;
     }
   }
@@ -79,7 +80,10 @@ export class GoogleCalendarService {
     }
 
     const params = new HttpParams({ fromObject: paramsObj });
-    window.location.href = `${environment.googleCalendar.authEndpoint}?${params.toString()}`;
+    const authUrl = `${environment.googleCalendar.authEndpoint}?${params.toString()}`;
+    console.log('Google OAuth authorize URL:', authUrl);
+    console.log('Google OAuth redirect URI:', redirectUri);
+    window.location.href = authUrl;
   }
 
   async ensureAuthorized(): Promise<boolean> {
@@ -98,10 +102,12 @@ export class GoogleCalendarService {
       'Content-Type': 'application/json'
     });
 
+    const params = new HttpParams().set('sendUpdates', 'all');
+
     return firstValueFrom(this.http.post(
       `${environment.googleCalendar.apiBaseUrl}/calendars/primary/events`,
       event,
-      { headers }
+      { headers, params }
     ));
   }
 
@@ -157,10 +163,6 @@ export class GoogleCalendarService {
       redirect_uri: redirectUri
     };
 
-    if (environment.googleCalendar.clientSecret) {
-      paramsObj.client_secret = environment.googleCalendar.clientSecret;
-    }
-
     const body = new HttpParams({ fromObject: paramsObj });
     const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' });
     return firstValueFrom(this.http.post<GoogleTokenResponse>(environment.googleCalendar.tokenEndpoint, body.toString(), { headers }));
@@ -172,10 +174,6 @@ export class GoogleCalendarService {
       grant_type: 'refresh_token',
       refresh_token: refreshToken
     };
-
-    if (environment.googleCalendar.clientSecret) {
-      paramsObj.client_secret = environment.googleCalendar.clientSecret;
-    }
 
     const body = new HttpParams({ fromObject: paramsObj });
     const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' });
@@ -217,6 +215,21 @@ export class GoogleCalendarService {
   }
 
   private getRedirectUri(): string {
-    return environment.googleCalendar.redirectUri || `${window.location.origin}/google-oauth-callback`;
+    const runtimeRedirectUri = `${window.location.origin}/google-oauth-callback`;
+    if (!environment.googleCalendar.redirectUri) {
+      return runtimeRedirectUri;
+    }
+
+    if (environment.googleCalendar.redirectUri.startsWith(window.location.origin)) {
+      return environment.googleCalendar.redirectUri;
+    }
+
+    console.warn(
+      'Google redirectUri configurado não corresponde ao origin atual. Usando redirect URI de runtime:',
+      runtimeRedirectUri,
+      'configurado:', environment.googleCalendar.redirectUri
+    );
+
+    return runtimeRedirectUri;
   }
 }

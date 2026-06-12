@@ -47,8 +47,12 @@ export class RegistroPage {
   // MÁSCARAS
   // =========================
 
+  private getInputValue(event: any): string {
+    return event?.detail?.value ?? event.target?.value ?? '';
+  }
+
   formatarCPF(event: any) {
-    let valor = event.target.value.replace(/\D/g, '');
+    let valor = this.getInputValue(event).replace(/\D/g, '');
 
     valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
     valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
@@ -58,7 +62,7 @@ export class RegistroPage {
   }
 
   formatarData(event: any) {
-    let valor = event.target.value.replace(/\D/g, '');
+    let valor = this.getInputValue(event).replace(/\D/g, '');
 
     valor = valor.replace(/(\d{2})(\d)/, '$1/$2');
     valor = valor.replace(/(\d{2})(\d)/, '$1/$2');
@@ -67,7 +71,7 @@ export class RegistroPage {
   }
 
   formatarTelefone(event: any) {
-    let valor = event.target.value.replace(/\D/g, '');
+    let valor = this.getInputValue(event).replace(/\D/g, '');
 
     valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
     valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
@@ -76,9 +80,12 @@ export class RegistroPage {
   }
 
   formatarCEP(event: any) {
-    let valor = event.target.value.replace(/\D/g, '');
+    let valor = this.getInputValue(event).replace(/\D/g, '');
 
     valor = valor.replace(/(\d{5})(\d)/, '$1-$2');
+    if (valor.length > 9) {
+      valor = valor.slice(0, 9);
+    }
 
     this.formData.cep = valor;
   }
