@@ -54,9 +54,9 @@
         <ion-textarea [(ngModel)]="observacoes" rows="3" placeholder="Ex: Primeira sessão, foco em ansiedade..."></ion-textarea>
       </ion-item>
 
-            <ion-button type="button" expand="block" fill="outline" color="secondary" (click)="conectarGoogleAgenda($event)" [disabled]="isLoading || isConnecting">
-        {{ googleAuthorized ? 'Google Agenda conectada (reconectar)' : 'Conectar Google Agenda' }}
-            </ion-button>
+      <ion-button type="button" expand="block" fill="outline" color="secondary" (click)="conectarGoogleAgenda($event)" [disabled]="isLoading || isConnecting">
+        {{ googleAuthorized ? 'Google Agenda conectada ✓ (Trocar Conta)' : 'Conectar Google Agenda' }}
+      </ion-button>
       
       <ion-button *ngIf="googleAuthorized" type="button" expand="block" fill="clear" color="danger" (click)="desconectarGoogleAgenda()" [disabled]="isLoading">
         Desconectar Google Agenda
@@ -65,11 +65,9 @@
       <ion-note *ngIf="googleAuthorized" class="ion-text-wrap" style="color: green; margin-top: 10px;">
         ✓ Conectado! Eventos serão salvos também na sua Google Agenda.
       </ion-note>
+      </ion-note>
       <ion-note *ngIf="!googleAuthorized" class="ion-text-wrap" style="color: #666; margin-top: 10px;">
         Clique para conectar e enviar consultas para o Google Agenda (opcional).
-      </ion-note>
-      <ion-note *ngIf="!googleAuthorized" class="ion-text-wrap">
-        Clique para conectar e enviar a consulta para o Google Agenda.
       </ion-note>
 
       <ion-button expand="block" class="ion-margin-top" (click)="agendar()" [disabled]="isLoading">

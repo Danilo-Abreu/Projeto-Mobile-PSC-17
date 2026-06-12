@@ -66,11 +66,26 @@ export class AgendarConsultaPage implements OnInit {
 
   private async initGoogleCalendar() {
     try {
-      await this.googleCalendarService.handleAuthCallback();
       this.googleAuthorized = await this.googleCalendarService.ensureAuthorized();
-    } catch (error) {
-      console.error('Erro ao inicializar Google Calendar:', error);
+      if (this.googleAuthorized) {
+        console.log('Google Calendar autorizado');
+      } else {
+        console.log('Google Calendar não autorizado. Usuário precisa fazer login.');
+      }
+    } catch (error: any) {
+      console.error('Erro ao inicializar Google Calendar:', error?.message || error);
       this.googleAuthorized = false;
+      
+      // Mostrar mensagem de erro se necessário
+      const errorMessage = error?.message || 'Erro ao inicializar Google Calendar';
+      if (errorMessage.includes('Sessão expirada')) {
+        const toast = await this.toastCtrl.create({
+          message: 'Sessão expirada. Por favor, conecte ao Google Calendar novamente.',
+          duration: 4000,
+          color: 'warning'
+        });
+        await toast.present();
+      }
     }
   }
 
@@ -251,6 +266,9 @@ export class AgendarConsultaPage implements OnInit {
           });
           await calendarToast.present();
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ac6b18d (Danilo)
         } catch (googleError: any) {
           const googleErrorCode = googleError?.code || 'UNKNOWN';
           const googleErrorMsg = googleError?.message || 'Erro ao sincronizar com Google Agenda';
@@ -264,6 +282,7 @@ export class AgendarConsultaPage implements OnInit {
           const calendarWarningToast = await this.toastCtrl.create({
             message: `⚠️ Google Calendar: ${googleErrorMsg}. O agendamento foi criado localmente.`,
             duration: 5000,
+<<<<<<< HEAD
 =======
         } catch (error: any) {
           console.error('Erro ao criar evento no Google Agenda:', error, error?.error ?? error);
@@ -274,6 +293,8 @@ export class AgendarConsultaPage implements OnInit {
             message,
             duration: 4000,
 >>>>>>> 70b41d3 (Danilo)
+=======
+>>>>>>> ac6b18d (Danilo)
             position: 'bottom',
             color: 'warning'
           });
@@ -340,12 +361,16 @@ export class AgendarConsultaPage implements OnInit {
 
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ac6b18d (Danilo)
       // Fazer logout primeiro se já estava conectado (para forçar seleção de email)
       if (this.googleAuthorized) {
         this.googleCalendarService.logout();
         this.googleAuthorized = false;
       }
 
+<<<<<<< HEAD
       const returnUrl = window.location.pathname + window.location.search;
       console.log('Iniciando autorização do Google Calendar, returnUrl=', returnUrl);
       
@@ -368,16 +393,34 @@ export class AgendarConsultaPage implements OnInit {
         message: this.errorMessage,
         duration: 4000,
 =======
+=======
+>>>>>>> ac6b18d (Danilo)
       const returnUrl = window.location.pathname + window.location.search;
-      console.log('Iniciando autorização Google Agenda, returnUrl=', returnUrl);
+      console.log('Iniciando autorização do Google Calendar, returnUrl=', returnUrl);
+      
+      // Mostrar loading durante o redirecionamento
+      const loading = await this.toastCtrl.create({
+        message: 'Redirecionando para Google Calendar...',
+        duration: 2000
+      });
+      await loading.present();
+      
       await this.googleCalendarService.authorize(returnUrl);
-    } catch (error) {
-      console.error('Erro ao iniciar autorização Google Agenda:', error);
-      this.errorMessage = 'Não foi possível iniciar o login no Google Agenda. Tente novamente.';
+      // Nota: A página será redirecionada, então o resto do código não será executado
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Erro desconhecido';
+      console.error('Erro ao iniciar autorização do Google Calendar:', errorMsg);
+      
+      this.errorMessage = `Não foi possível conectar ao Google Calendar: ${errorMsg}`;
+      
       const toast = await this.toastCtrl.create({
         message: this.errorMessage,
+<<<<<<< HEAD
         duration: 3000,
 >>>>>>> 70b41d3 (Danilo)
+=======
+        duration: 4000,
+>>>>>>> ac6b18d (Danilo)
         color: 'danger'
       });
       await toast.present();
@@ -399,6 +442,18 @@ export class AgendarConsultaPage implements OnInit {
     await toast.present();
 =======
 >>>>>>> 70b41d3 (Danilo)
+  }
+
+  async desconectarGoogleAgenda() {
+    this.googleCalendarService.logout();
+    this.googleAuthorized = false;
+    
+    const toast = await this.toastCtrl.create({
+      message: 'Desconectado do Google Calendar. Você pode conectar com outra conta.',
+      duration: 3000,
+      color: 'success'
+    });
+    await toast.present();
   }
 
   private buildGoogleEvent(agendamento: Agendamento) {
@@ -453,58 +508,37 @@ export class AgendarConsultaPage implements OnInit {
         return null;
       }
 
-      const hour = Number(timeMatch[1]);
-      const minute = Number(timeMatch[2]);
-      const second = Number(timeMatch[3] || '0');
-
-      if (Number.isNaN(hour) || Number.isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-        console.warn('buildDateTime: componentes de hora inválidos', { hour, minute });
-        return null;
-      }
-
-      // Parse da data em vários formatos comuns
-      let year: number | null = null;
-      let month: number | null = null;
-      let day: number | null = null;
-
-      // YYYY-MM-DD (possivelmente com tempo anexado)
-      const isoDateMatch = cleanedDate.split('T')[0].match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (isoDateMatch) {
-        year = Number(isoDateMatch[1]);
-        month = Number(isoDateMatch[2]);
-        day = Number(isoDateMatch[3]);
-      } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleanedDate)) {
-        // DD/MM/YYYY
-        const parts = cleanedDate.split('/').map(p => Number(p));
-        day = parts[0];
-        month = parts[1];
-        year = parts[2];
-      } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(cleanedDate)) {
-        // YYYY/MM/DD
-        const parts = cleanedDate.split('/').map(p => Number(p));
-        year = parts[0];
-        month = parts[1];
-        day = parts[2];
-      } else {
-        // Tenta fallback com Date.parse em strings amigáveis
-        const fallback = new Date(cleanedDate);
-        if (!isNaN(fallback.getTime())) {
-          fallback.setHours(hour, minute, second, 0);
-          return fallback;
+      try {
+        // Fazer logout primeiro se já estava conectado (para forçar seleção de email)
+        if (this.googleAuthorized) {
+          this.googleCalendarService.logout();
+          this.googleAuthorized = false;
         }
-        console.warn('buildDateTime: formato de data não reconhecido', cleanedDate);
-        return null;
-      }
 
-      if (year === null || month === null || day === null) {
-        return null;
-      }
+        const returnUrl = window.location.pathname + window.location.search;
+        console.log('Iniciando autorização do Google Calendar, returnUrl=', returnUrl);
 
-      const builtDate = new Date(year, month - 1, day, hour, minute, second);
-      if (isNaN(builtDate.getTime())) {
-        console.warn('buildDateTime: data construída inválida', { year, month, day, hour, minute, second });
-        return null;
+        const loading = await this.toastCtrl.create({ message: 'Redirecionando para Google Calendar...', duration: 2000 });
+        await loading.present();
+
+        await this.googleCalendarService.authorize(returnUrl);
+        // A página será redirecionada pelo fluxo de autorização
+      } catch (error: any) {
+        const errorMsg = error?.message || 'Erro desconhecido';
+        console.error('Erro ao iniciar autorização do Google Calendar:', errorMsg);
+
+        this.errorMessage = `Não foi possível conectar ao Google Calendar: ${errorMsg}`;
+        const toast = await this.toastCtrl.create({ message: this.errorMessage, duration: 4000, color: 'danger' });
+        await toast.present();
+      } finally {
+        this.isConnecting = false;
       }
-      return builtDate;
     }
-  }
+
+    async desconectarGoogleAgenda() {
+      this.googleCalendarService.logout();
+      this.googleAuthorized = false;
+
+      const toast = await this.toastCtrl.create({ message: 'Desconectado do Google Calendar. Você pode conectar com outra conta.', duration: 3000, color: 'success' });
+      await toast.present();
+    }

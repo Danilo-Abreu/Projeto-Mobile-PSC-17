@@ -1,3 +1,7 @@
+import { getRuntimeEnvironment } from './environment.override';
+
+const runtime = getRuntimeEnvironment();
+
 export const environment = {
   production: false,
   firebaseConfig: {
@@ -15,6 +19,7 @@ export const environment = {
     scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
     authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenEndpoint: 'https://oauth2.googleapis.com/token',
-    apiBaseUrl: 'https://www.googleapis.com/calendar/v3'
+    apiBaseUrl: 'https://www.googleapis.com/calendar/v3',
+    ...(runtime.googleCalendar || {})
   }
 };

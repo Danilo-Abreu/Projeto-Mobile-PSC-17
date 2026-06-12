@@ -133,7 +133,7 @@ npm start
 googleCalendar: {
    clientId: 'REPLACE_WITH_GOOGLE_CLIENT_ID',
    clientSecret: 'REPLACE_WITH_GOOGLE_CLIENT_SECRET',
-  redirectUri: 'http://localhost:8100/google-oauth-callback',
+   redirectUri: 'http://localhost:8100/google-oauth-callback',
   scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
   authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
@@ -146,7 +146,7 @@ googleCalendar: {
 googleCalendar: {
    clientId: 'REPLACE_WITH_GOOGLE_CLIENT_ID',
    clientSecret: 'REPLACE_WITH_GOOGLE_CLIENT_SECRET',
-  redirectUri: 'https://projetomobile-860f3.firebaseapp.com/google-oauth-callback',
+   redirectUri: 'https://projetomobile-860f3.firebaseapp.com/google-oauth-callback',
   scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
   authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
