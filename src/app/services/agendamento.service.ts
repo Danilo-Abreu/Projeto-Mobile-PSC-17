@@ -116,17 +116,27 @@ export class AgendamentoService {
     const fimDoDia = new Date(data);
     fimDoDia.setHours(23, 59, 59, 999);
 
+    console.log('📅 Verificando agenda do psicólogo:', {
+      psicologoEmail,
+      data: data.toISOString(),
+      inicioDoDia: inicioDoDia.toISOString(),
+      fimDoDia: fimDoDia.toISOString()
+    });
+
     return this.firestore.collection<Agendamento>('agendamentos', ref =>
       ref.where('psicologoEmail', '==', psicologoEmail)
          .where('dataHora', '>=', inicioDoDia)
          .where('dataHora', '<=', fimDoDia)
          .orderBy('dataHora', 'asc')
     ).valueChanges({ idField: 'id' }).pipe(
-      map(agendamentos => agendamentos.map(ag => ({
-        ...ag,
-        dataHora: (ag.dataHora as any).toDate(),
-        criadoEm: (ag.criadoEm as any).toDate()
-      })))
+      map(agendamentos => {
+        console.log('✅ Agendamentos encontrados para o dia:', agendamentos.length);
+        return agendamentos.map(ag => ({
+          ...ag,
+          dataHora: (ag.dataHora as any).toDate(),
+          criadoEm: (ag.criadoEm as any).toDate()
+        }));
+      })
     );
   }
 }

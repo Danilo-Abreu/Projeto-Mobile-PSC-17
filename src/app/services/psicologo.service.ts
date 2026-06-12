@@ -11,13 +11,18 @@ export class PsicologoService {
   obterTodos(): Observable<any[]> {
     return this.firestore
       .collection('usuarios', ref => ref.where('tipoUsuario', '==', 'psicologo'))
+      .valueChanges({ idField: 'id' });
+  }
+
+  obterPorId(id: string): Observable<any | undefined> {
+    return this.firestore
+      .doc<any>(`usuarios/${id}`)
       .valueChanges();
   }
 
   obterPorEmail(email: string): Observable<any | undefined> {
     return this.firestore
       .collection('usuarios', ref => ref.where('email', '==', email))
-      .valueChanges()
-      .pipe();
+      .valueChanges();
   }
 }

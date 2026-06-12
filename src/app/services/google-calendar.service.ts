@@ -24,66 +24,114 @@ export class GoogleCalendarService {
   constructor(private http: HttpClient) {}
 
   async handleAuthCallback(): Promise<string | null> {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    console.log('Google OAuth callback params:', { code, state });
-    if (!code) {
-      return null;
-    }
-
-    const codeVerifier = localStorage.getItem(this.codeVerifierKey);
-    if (!codeVerifier) {
-      console.error('Code verifier não encontrado para o fluxo OAuth.');
-      return null;
-    }
-
     try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const errorParam = params.get('error');
+      
+      console.log('Google OAuth callback params:', { code, state, errorParam });
+
+      // Verificar se houve erro de autorização
+      if (errorParam) {
+        const errorDescription = params.get('error_description') || 'Autorização negada';
+        console.error('Erro de autorização do Google:', errorParam, errorDescription);
+        throw new Error(`Autorização negada: ${errorDescription}`);
+      }
+
+      if (!code) {
+        console.debug('Google OAuth callback sem código de autorização; não estamos na rota de callback.');
+        return null;
+      }
+
+      const codeVerifier = localStorage.getItem(this.codeVerifierKey);
+      if (!codeVerifier) {
+        console.error('Code verifier não encontrado para o fluxo OAuth.');
+        throw new Error('Sessão expirada. Tente novamente.');
+      }
+
       const tokenResponse = await this.exchangeCodeForToken(code, codeVerifier);
       this.storeTokenResponse(tokenResponse);
       this.clearUrlParams();
-
+      
+      // Limpar dados temporários
+      localStorage.removeItem(this.codeVerifierKey);
+      
       const storedReturnUrl = localStorage.getItem(this.returnUrlKey);
       if (state) {
         localStorage.removeItem(this.returnUrlKey);
       }
 
+      console.log('Autenticação concluída com sucesso');
       return state ? state : storedReturnUrl;
     } catch (error: any) {
-      console.error('Erro ao trocar código OAuth por token:', error, error?.error ?? error);
-      return null;
+      console.error('Erro ao processar callback do Google OAuth:', error);
+      throw error;
     }
   }
 
   async authorize(returnUrl?: string): Promise<void> {
-    const codeVerifier = this.generateCodeVerifier();
-    const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+    try {
+      const codeVerifier = this.generateCodeVerifier();
+      const codeChallenge = await this.generateCodeChallenge(codeVerifier);
 
-    localStorage.setItem(this.codeVerifierKey, codeVerifier);
+      localStorage.setItem(this.codeVerifierKey, codeVerifier);
 
-    const redirectUri = this.getRedirectUri();
-    const paramsObj: any = {
-      client_id: environment.googleCalendar.clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: environment.googleCalendar.scope,
-      access_type: 'offline',
-      prompt: 'consent',
-      include_granted_scopes: 'true',
-      code_challenge: codeChallenge,
-      code_challenge_method: 'S256'
-    };
+      const redirectUri = this.getRedirectUri();
+      
+      if (!environment.googleCalendar.clientId) {
+        throw new Error('Client ID não configurado');
+      }
 
-    if (returnUrl) {
-      paramsObj.state = returnUrl;
-      localStorage.setItem(this.returnUrlKey, returnUrl);
+      // Verificar se localhost está acessível
+      if (redirectUri.includes('localhost')) {
+        try {
+          const response = await fetch(`${window.location.origin}/`, { method: 'HEAD' });
+          console.log('✓ Servidor acessível em:', window.location.origin);
+        } catch (e) {
+          console.error('✗ ERRO: Servidor de desenvolvimento não está respondendo em', window.location.origin);
+          console.error('✗ Abra um terminal e execute: npm start');
+          throw new Error(`Servidor não acessível: ${window.location.origin}. Inicie com: npm start`);
+        }
+      }
+
+      const paramsObj: any = {
+        client_id: environment.googleCalendar.clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: environment.googleCalendar.scope,
+        access_type: 'offline',
+        prompt: 'select_account',
+        include_granted_scopes: 'true',
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256'
+      };
+
+      if (returnUrl) {
+        paramsObj.state = returnUrl;
+        localStorage.setItem(this.returnUrlKey, returnUrl);
+      }
+
+      const params = new HttpParams({ fromObject: paramsObj });
+      const authUrl = `${environment.googleCalendar.authEndpoint}?${params.toString()}`;
+      
+      console.log('✓ Iniciando autorização do Google Calendar');
+      console.log('  Client ID:', environment.googleCalendar.clientId);
+      console.log('  Redirect URI:', redirectUri);
+      console.log('  Scope:', environment.googleCalendar.scope);
+      
+      // Salvar diagnóstico para debug
+      sessionStorage.setItem('google_auth_debug', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        redirectUri,
+        authUrl: authUrl.substring(0, 100) + '...'
+      }));
+      
+      window.location.href = authUrl;
+    } catch (error: any) {
+      console.error('✗ Erro ao preparar autorização:', error?.message || error);
+      throw error;
     }
-
-    const params = new HttpParams({ fromObject: paramsObj });
-    const authUrl = `${environment.googleCalendar.authEndpoint}?${params.toString()}`;
-    console.log('Google OAuth authorize URL:', authUrl);
-    console.log('Google OAuth redirect URI:', redirectUri);
-    window.location.href = authUrl;
   }
 
   async ensureAuthorized(): Promise<boolean> {
@@ -91,70 +139,135 @@ export class GoogleCalendarService {
     return !!token;
   }
 
+  logout(): void {
+    localStorage.removeItem(this.accessTokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
+    localStorage.removeItem(this.expiresAtKey);
+    localStorage.removeItem(this.codeVerifierKey);
+    localStorage.removeItem(this.returnUrlKey);
+    console.log('Logout do Google Calendar concluído');
+  }
+
   async createEvent(event: any): Promise<any> {
     const accessToken = await this.getAccessToken();
     if (!accessToken) {
-      throw new Error('Google Agenda não autorizada.');
+      throw new Error('Google Agenda não autorizada. Faça login novamente.');
+    }
+
+    if (!event.summary || !event.start || !event.end) {
+      throw new Error('Evento inválido. Campos obrigatórios: summary, start, end');
     }
 
     const headers = new HttpHeaders({
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     });
 
     const params = new HttpParams().set('sendUpdates', 'all');
 
-    return firstValueFrom(this.http.post(
-      `${environment.googleCalendar.apiBaseUrl}/calendars/primary/events`,
-      event,
-      { headers, params }
-    ));
+    try {
+      const response = await firstValueFrom(
+        this.http.post(
+          `${environment.googleCalendar.apiBaseUrl}/calendars/primary/events`,
+          event,
+          { headers, params }
+        )
+      );
+      console.log('Evento criado no Google Calendar:', response);
+      return response;
+    } catch (error: any) {
+      const errorMessage = error?.error?.error?.message || error?.error?.error || 'Erro desconhecido';
+      const status = error?.status;
+      
+      console.error('Erro ao criar evento no Google Calendar:', status, errorMessage);
+      
+      if (status === 401) {
+        throw new Error('Token inválido ou expirado. Faça login novamente no Google Agenda.');
+      } else if (status === 403) {
+        throw new Error('Permissão negada. Verifique os escopos de acesso.');
+      } else if (status === 400) {
+        throw new Error(`Requisição inválida: ${errorMessage}`);
+      }
+      
+      throw new Error(`Erro ao criar evento: ${errorMessage}`);
+    }
   }
 
   async listUpcomingEvents(maxResults = 10): Promise<any> {
     const accessToken = await this.getAccessToken();
     if (!accessToken) {
-      throw new Error('Google Agenda não autorizada.');
+      throw new Error('Google Agenda não autorizada. Faça login novamente.');
     }
 
-    const headers = new HttpHeaders({ Authorization: `Bearer ${accessToken}` });
+    const headers = new HttpHeaders({ 
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json'
+    });
+    
     const params = new HttpParams()
-      .set('maxResults', maxResults)
+      .set('maxResults', maxResults.toString())
       .set('orderBy', 'startTime')
       .set('singleEvents', 'true')
       .set('timeMin', new Date().toISOString());
 
-    return firstValueFrom(this.http.get(
-      `${environment.googleCalendar.apiBaseUrl}/calendars/primary/events`,
-      { headers, params }
-    ));
+    try {
+      const response = await firstValueFrom(
+        this.http.get(
+          `${environment.googleCalendar.apiBaseUrl}/calendars/primary/events`,
+          { headers, params }
+        )
+      );
+      console.log('Eventos obtidos do Google Calendar:', response);
+      return response;
+    } catch (error: any) {
+      const errorMessage = error?.error?.error?.message || error?.error?.error || 'Erro desconhecido';
+      const status = error?.status;
+      
+      console.error('Erro ao listar eventos:', status, errorMessage);
+      
+      if (status === 401) {
+        throw new Error('Token inválido ou expirado. Faça login novamente.');
+      }
+      
+      throw new Error(`Erro ao listar eventos: ${errorMessage}`);
+    }
   }
 
   private async getAccessToken(): Promise<string | null> {
-    const accessToken = localStorage.getItem(this.accessTokenKey);
-    const expiresAt = Number(localStorage.getItem(this.expiresAtKey) || '0');
-
-    if (accessToken && expiresAt > Date.now() + 60000) {
-      return accessToken;
-    }
-
-    const refreshToken = localStorage.getItem(this.refreshTokenKey);
-    if (!refreshToken) {
-      return null;
-    }
-
     try {
+      const accessToken = localStorage.getItem(this.accessTokenKey);
+      const expiresAt = Number(localStorage.getItem(this.expiresAtKey) || '0');
+
+      // Verificar se token ainda é válido (com margem de 60 segundos)
+      if (accessToken && expiresAt > Date.now() + 60000) {
+        console.log('Usando token de acesso em cache');
+        return accessToken;
+      }
+
+      const refreshToken = localStorage.getItem(this.refreshTokenKey);
+      if (!refreshToken) {
+        console.warn('Nenhum token de atualização disponível');
+        return null;
+      }
+
+      console.log('Token expirado ou não disponível. Atualizando...');
       const refreshResponse = await this.refreshAccessToken(refreshToken);
       this.storeTokenResponse(refreshResponse);
       return refreshResponse.access_token;
     } catch (error) {
-      console.error('Erro ao atualizar token de acesso:', error);
+      console.error('Erro ao obter token de acesso:', error);
       return null;
     }
   }
 
   private async exchangeCodeForToken(code: string, codeVerifier: string): Promise<GoogleTokenResponse> {
     const redirectUri = this.getRedirectUri();
+    
+    if (!code || !codeVerifier) {
+      throw new Error('Código de autorização ou verificador de código inválido.');
+    }
+
     const paramsObj: any = {
       client_id: environment.googleCalendar.clientId,
       grant_type: 'authorization_code',
@@ -163,21 +276,77 @@ export class GoogleCalendarService {
       redirect_uri: redirectUri
     };
 
+    // Incluir client_secret se disponível (para ambiente de produção com backend seguro)
+    if (environment.googleCalendar.clientSecret && !environment.production) {
+      paramsObj.client_secret = environment.googleCalendar.clientSecret;
+    }
+
     const body = new HttpParams({ fromObject: paramsObj });
-    const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' });
-    return firstValueFrom(this.http.post<GoogleTokenResponse>(environment.googleCalendar.tokenEndpoint, body.toString(), { headers }));
+    const headers = new HttpHeaders({ 
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json'
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<GoogleTokenResponse>(
+          environment.googleCalendar.tokenEndpoint, 
+          body.toString(), 
+          { headers }
+        )
+      );
+      console.log('Token obtido com sucesso');
+      return response;
+    } catch (error: any) {
+      const errorMessage = error?.error?.error_description || error?.error?.error || 'Erro desconhecido';
+      console.error('Erro ao trocar código por token:', error?.status, errorMessage);
+      throw new Error(`Falha ao obter token: ${errorMessage}`);
+    }
   }
 
   private async refreshAccessToken(refreshToken: string): Promise<GoogleTokenResponse> {
+    if (!refreshToken) {
+      throw new Error('Token de atualização não disponível.');
+    }
+
     const paramsObj: any = {
       client_id: environment.googleCalendar.clientId,
       grant_type: 'refresh_token',
       refresh_token: refreshToken
     };
 
+    // Incluir client_secret se disponível
+    if (environment.googleCalendar.clientSecret && !environment.production) {
+      paramsObj.client_secret = environment.googleCalendar.clientSecret;
+    }
+
     const body = new HttpParams({ fromObject: paramsObj });
-    const headers = new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' });
-    return firstValueFrom(this.http.post<GoogleTokenResponse>(environment.googleCalendar.tokenEndpoint, body.toString(), { headers }));
+    const headers = new HttpHeaders({ 
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json'
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<GoogleTokenResponse>(
+          environment.googleCalendar.tokenEndpoint, 
+          body.toString(), 
+          { headers }
+        )
+      );
+      console.log('Token atualizado com sucesso');
+      return response;
+    } catch (error: any) {
+      const errorMessage = error?.error?.error_description || error?.error?.error || 'Erro desconhecido';
+      console.error('Erro ao atualizar token:', error?.status, errorMessage);
+      
+      // Limpar tokens inválidos
+      localStorage.removeItem(this.refreshTokenKey);
+      localStorage.removeItem(this.accessTokenKey);
+      localStorage.removeItem(this.expiresAtKey);
+      
+      throw new Error(`Falha ao atualizar token: ${errorMessage}`);
+    }
   }
 
   private storeTokenResponse(response: GoogleTokenResponse): void {
@@ -215,21 +384,17 @@ export class GoogleCalendarService {
   }
 
   private getRedirectUri(): string {
+    // Sempre usar a URL configurada em environment para garantir consistência
+    if (environment.googleCalendar.redirectUri && environment.googleCalendar.redirectUri !== 'https://YOUR_PRODUCTION_URL') {
+      const uri = environment.googleCalendar.redirectUri;
+      console.log('📍 Usando Redirect URI configurado:', uri);
+      return uri;
+    }
+
+    // Fallback para o origin atual
     const runtimeRedirectUri = `${window.location.origin}/google-oauth-callback`;
-    if (!environment.googleCalendar.redirectUri) {
-      return runtimeRedirectUri;
-    }
-
-    if (environment.googleCalendar.redirectUri.startsWith(window.location.origin)) {
-      return environment.googleCalendar.redirectUri;
-    }
-
-    console.warn(
-      'Google redirectUri configurado não corresponde ao origin atual. Usando redirect URI de runtime:',
-      runtimeRedirectUri,
-      'configurado:', environment.googleCalendar.redirectUri
-    );
-
+    console.log('📍 Usando Redirect URI em runtime:', runtimeRedirectUri);
+    
     return runtimeRedirectUri;
   }
 }

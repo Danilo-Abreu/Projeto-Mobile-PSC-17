@@ -2,12 +2,19 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /usuarios/{document} {
+    // Permitir leitura e escrita em usuarios para qualquer um (desenvolvimento)
+    match /usuarios/{document=**} {
       allow read, write: if true;
     }
 
-    match /agendamentos/{document} {
+    // Permitir leitura e escrita em agendamentos para qualquer um (desenvolvimento)
+    match /agendamentos/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Fallback para qualquer outra coleção
+    match /{document=**} {
       allow read, write: if true;
     }
   }
-} 
+}

@@ -1,23 +1,23 @@
 import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
-import { CommonModule, CurrencyPipe } from '@angular/common'; // Adicione CurrencyPipe
-import { ActivatedRoute, Router, RouterLink } from '@angular/router'; // Adicione RouterLink
-import { DataService, Psicologo } from 'src/app/services/data.service';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PsicologoService } from 'src/app/services/psicologo.service';
 
 @Component({
   selector: 'app-detalhes-psicologo',
   templateUrl: './detalhes-psicologo.page.html',
   styleUrls: ['./detalhes-psicologo.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterLink, CurrencyPipe] // Adicione RouterLink e CurrencyPipe
+  imports: [IonicModule, CommonModule, RouterLink, CurrencyPipe]
 })
 export class DetalhesPsicologoPage implements OnInit {
-  psicologo: Psicologo | undefined;
+  psicologo: any | undefined;
   isLoading: boolean = true;
 
   constructor(
     private route: ActivatedRoute,
-    private dataService: DataService,
+    private psicologoService: PsicologoService,
     private router: Router
   ) {}
 
@@ -32,16 +32,21 @@ export class DetalhesPsicologoPage implements OnInit {
 
   carregarDetalhes(id: string) {
     this.isLoading = true;
-    this.dataService.getPsicologoById(id).subscribe(data => {
+    this.psicologoService.obterPorId(id).subscribe(data => {
       this.psicologo = data;
+      this.isLoading = false;
+    }, error => {
+      console.error('Erro ao carregar detalhes do psicólogo:', error);
       this.isLoading = false;
     });
   }
 
   agendar() {
-    if (this.psicologo) {
-      // Navega para a sua página de agendamento existente, passando o e-mail
+    if (this.psicologo && this.psicologo.email) {
+      console.log('Navegando para agendar com psicólogo:', this.psicologo.email);
       this.router.navigate(['/agendar-consulta', this.psicologo.email]);
+    } else {
+      console.error('Email do psicólogo não disponível');
     }
   }
 }

@@ -52,10 +52,13 @@ export class AgendarConsultaPage implements OnInit {
     }
 
     this.psicologoEmail = this.route.snapshot.paramMap.get('psicologoEmail');
+    console.log('Psicólogo email recebido:', this.psicologoEmail);
+    
     if (this.psicologoEmail) {
       this.loadPsicologoInfo(this.psicologoEmail);
     } else {
-      this.errorMessage = 'E-mail do psicólogo não fornecido.';
+      this.errorMessage = 'E-mail do psicólogo não fornecido. Navegue a partir da lista de psicólogos.';
+      console.error('Nenhum psicologoEmail na rota');
     }
 
     this.initGoogleCalendar();
@@ -63,32 +66,106 @@ export class AgendarConsultaPage implements OnInit {
 
   private async initGoogleCalendar() {
     try {
-      await this.googleCalendarService.handleAuthCallback();
       this.googleAuthorized = await this.googleCalendarService.ensureAuthorized();
-    } catch (error) {
-      console.error('Erro ao inicializar Google Calendar:', error);
+      if (this.googleAuthorized) {
+        console.log('Google Calendar autorizado');
+      } else {
+        console.log('Google Calendar não autorizado. Usuário precisa fazer login.');
+      }
+    } catch (error: any) {
+      console.error('Erro ao inicializar Google Calendar:', error?.message || error);
       this.googleAuthorized = false;
+      
+      // Mostrar mensagem de erro se necessário
+      const errorMessage = error?.message || 'Erro ao inicializar Google Calendar';
+      if (errorMessage.includes('Sessão expirada')) {
+        const toast = await this.toastCtrl.create({
+          message: 'Sessão expirada. Por favor, conecte ao Google Calendar novamente.',
+          duration: 4000,
+          color: 'warning'
+        });
+        await toast.present();
+      }
     }
   }
 
   async loadPsicologoInfo(email: string) {
     try {
+      console.log('Buscando informações do psicólogo com email:', email);
+      
       const snapshot = await this.firestore.collection('usuarios', ref => ref.where('email', '==', email)).get().toPromise();
+      
       if (snapshot && !snapshot.empty) {
         const psicologo = snapshot.docs[0].data() as User;
         this.psicologoNome = `${psicologo.nome} ${psicologo.sobrenome}`;
+        console.log('Psicólogo encontrado:', this.psicologoNome);
       } else {
-        this.errorMessage = 'Psicólogo não encontrado.';
+        this.errorMessage = `Psicólogo com email ${email} não encontrado no banco de dados.`;
+        console.error('Psicólogo não encontrado:', email);
+        
+        const toast = await this.toastCtrl.create({
+          message: 'Psicólogo não encontrado. Verifique se foi selecionado corretamente.',
+          duration: 3000,
+          color: 'warning'
+        });
+        await toast.present();
       }
     } catch (error) {
       console.error('Erro ao carregar informações do psicólogo:', error);
       this.errorMessage = 'Erro ao carregar informações do psicólogo.';
+      
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+        color: 'danger'
+      });
+      await toast.present();
     }
   }
 
   async agendar() {
-    if (!this.psicologoEmail || !this.pacienteEmail || !this.dataConsulta || !this.horaConsulta) {
-      this.errorMessage = 'Por favor, preencha todos os campos obrigatórios.';
+    // Validação inicial rigorosa
+    if (!this.psicologoEmail) {
+      this.errorMessage = '❌ Email do psicólogo não foi carregado. Volte e tente novamente.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+        color: 'danger'
+      });
+      await toast.present();
+      return;
+    }
+
+    if (!this.pacienteEmail) {
+      this.errorMessage = '❌ Seu email não está carregado. Faça login novamente.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+        color: 'danger'
+      });
+      await toast.present();
+      return;
+    }
+
+    if (!this.dataConsulta || !this.horaConsulta) {
+      this.errorMessage = '❌ Por favor, preencha DATA e HORA da consulta.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
+    if (!this.psicologoNome || this.psicologoNome.trim() === '') {
+      this.errorMessage = '❌ Psicólogo não encontrado. Dados inválidos.';
+      const toast = await this.toastCtrl.create({
+        message: this.errorMessage,
+        duration: 3000,
+        color: 'danger'
+      });
+      await toast.present();
       return;
     }
 
@@ -96,9 +173,35 @@ export class AgendarConsultaPage implements OnInit {
     this.errorMessage = '';
 
     try {
-      const [ano, mes, dia] = this.dataConsulta.split('-').map(Number);
-      const [horas, minutos] = this.horaConsulta.split(':').map(Number);
-      const dataHoraAgendamento = new Date(ano, mes - 1, dia, horas, minutos);
+      console.log('👤 Usuário logado:', this.pacienteEmail);
+      console.log('🏥 Psicólogo selecionado:', this.psicologoEmail);
+      
+      const dataHoraAgendamento = this.buildDateTime(this.dataConsulta, this.horaConsulta);
+
+      if (!dataHoraAgendamento) {
+        this.errorMessage = 'Formato de data ou hora inválido. Verifique os campos do agendamento.';
+        const toast = await this.toastCtrl.create({
+          message: this.errorMessage,
+          duration: 3000,
+          color: 'warning'
+        });
+        await toast.present();
+        this.isLoading = false;
+        return;
+      }
+
+      // Validar que a data está no futuro
+      if (dataHoraAgendamento.getTime() <= new Date().getTime()) {
+        this.errorMessage = 'A data da consulta não pode ser no passado.';
+        const toast = await this.toastCtrl.create({
+          message: this.errorMessage,
+          duration: 3000,
+          color: 'warning'
+        });
+        await toast.present();
+        this.isLoading = false;
+        return;
+      }
 
       // Verificar disponibilidade do psicólogo para o dia
       if (this.psicologoEmail) {
@@ -114,7 +217,11 @@ export class AgendarConsultaPage implements OnInit {
 
         if (conflito) {
           this.errorMessage = 'Horário indisponível no dia selecionado. Escolha outro horário.';
-          const toast = await this.toastCtrl.create({ message: this.errorMessage, duration: 3000, color: 'danger' });
+          const toast = await this.toastCtrl.create({
+            message: this.errorMessage,
+            duration: 3000,
+            color: 'danger'
+          });
           await toast.present();
           this.isLoading = false;
           return;
@@ -131,11 +238,26 @@ export class AgendarConsultaPage implements OnInit {
         criadoEm: new Date()
       };
 
-      await this.agendamentoService.criarAgendamento(novoAgendamento);
+      // Criar agendamento no Firebase
+      console.log('📝 Criando agendamento no Firestore:', novoAgendamento);
+      try {
+        await this.agendamentoService.criarAgendamento(novoAgendamento);
+        console.log('✅ Agendamento criado no Firebase com sucesso');
+      } catch (firebaseError: any) {
+        console.error('❌ ERRO AO CRIAR NO FIRESTORE:', firebaseError?.message || firebaseError?.code || firebaseError);
+        throw new Error(`Firestore: ${firebaseError?.message || firebaseError?.code || 'Erro desconhecido'}`);
+      }
 
+      // Tentar sincronizar com Google Calendar se autorizado
+      let calendarSyncSuccessful = false;
       if (this.googleAuthorized) {
         try {
-          await this.googleCalendarService.createEvent(this.buildGoogleEvent(novoAgendamento));
+          const googleEvent = this.buildGoogleEvent(novoAgendamento);
+          console.log('Criando evento no Google Calendar:', googleEvent);
+          
+          await this.googleCalendarService.createEvent(googleEvent);
+          calendarSyncSuccessful = true;
+          
           const calendarToast = await this.toastCtrl.create({
             message: 'Evento criado também no Google Agenda.',
             duration: 2500,
@@ -143,34 +265,63 @@ export class AgendarConsultaPage implements OnInit {
             color: 'success'
           });
           await calendarToast.present();
-        } catch (error: any) {
-          console.error('Erro ao criar evento no Google Agenda:', error, error?.error ?? error);
-          const message = error?.status === 400
-            ? 'Erro 400 no Google Agenda. Verifique se o token é válido e se as URLs estão autorizadas.'
-            : 'Não foi possível salvar no Google Agenda. O agendamento foi criado localmente.';
-          const calendarError = await this.toastCtrl.create({
-            message,
-            duration: 4000,
+        } catch (googleError: any) {
+          const googleErrorCode = googleError?.code || 'UNKNOWN';
+          const googleErrorMsg = googleError?.message || 'Erro ao sincronizar com Google Agenda';
+          
+          console.error('⚠️ ERRO AO SINCRONIZAR COM GOOGLE CALENDAR:', {
+            code: googleErrorCode,
+            message: googleErrorMsg,
+            fullError: googleError
+          });
+          
+          const calendarWarningToast = await this.toastCtrl.create({
+            message: `⚠️ Google Calendar: ${googleErrorMsg}. O agendamento foi criado localmente.`,
+            duration: 5000,
             position: 'bottom',
             color: 'warning'
           });
-          await calendarError.present();
+          await calendarWarningToast.present();
+          
+          // Não interromper o fluxo - agendamento local foi criado
         }
+      } else {
+        console.log('Google Calendar não autorizado. Agendamento criado apenas localmente.');
       }
 
+      // Mostrar sucesso
       const toast = await this.toastCtrl.create({
-        message: 'Agendamento confirmado com sucesso.',
+        message: '✅ Agendamento confirmado com sucesso!',
         duration: 2500,
-        position: 'bottom'
+        position: 'bottom',
+        color: 'success'
       });
       await toast.present();
+      
+      // Navegar para proximas consultas
       this.router.navigate(['/proximas-consultas']);
-    } catch (error) {
-      console.error('Erro ao agendar consulta:', error);
-      this.errorMessage = 'Erro ao agendar consulta. Tente novamente.';
+    } catch (error: any) {
+      const errorCode = error?.code || 'UNKNOWN';
+      const errorMessage = error?.message || 'Erro ao agendar consulta. Tente novamente.';
+      
+      console.error('❌ ERRO AO AGENDAR:', {
+        code: errorCode,
+        message: errorMessage,
+        fullError: error
+      });
+      
+      // Mostrar se é erro de Firestore ou Google Calendar
+      if (errorCode === 'permission-denied') {
+        this.errorMessage = `❌ Permissão negada no Firestore. Verifique as regras de segurança.`;
+      } else if (errorMessage.includes('Google') || errorMessage.includes('Calendar')) {
+        this.errorMessage = `❌ Erro Google Calendar: ${errorMessage}`;
+      } else {
+        this.errorMessage = `❌ ${errorMessage}`;
+      }
+      
       const toast = await this.toastCtrl.create({
         message: this.errorMessage,
-        duration: 2500,
+        duration: 4000,
         position: 'bottom',
         color: 'danger'
       });
@@ -192,21 +343,51 @@ export class AgendarConsultaPage implements OnInit {
     this.isConnecting = true;
 
     try {
+      // Fazer logout primeiro se já estava conectado (para forçar seleção de email)
+      if (this.googleAuthorized) {
+        this.googleCalendarService.logout();
+        this.googleAuthorized = false;
+      }
+
       const returnUrl = window.location.pathname + window.location.search;
-      console.log('Iniciando autorização Google Agenda, returnUrl=', returnUrl);
+      console.log('Iniciando autorização do Google Calendar, returnUrl=', returnUrl);
+      
+      // Mostrar loading durante o redirecionamento
+      const loading = await this.toastCtrl.create({
+        message: 'Redirecionando para Google Calendar...',
+        duration: 2000
+      });
+      await loading.present();
+      
       await this.googleCalendarService.authorize(returnUrl);
-    } catch (error) {
-      console.error('Erro ao iniciar autorização Google Agenda:', error);
-      this.errorMessage = 'Não foi possível iniciar o login no Google Agenda. Tente novamente.';
+      // Nota: A página será redirecionada, então o resto do código não será executado
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Erro desconhecido';
+      console.error('Erro ao iniciar autorização do Google Calendar:', errorMsg);
+      
+      this.errorMessage = `Não foi possível conectar ao Google Calendar: ${errorMsg}`;
+      
       const toast = await this.toastCtrl.create({
         message: this.errorMessage,
-        duration: 3000,
+        duration: 4000,
         color: 'danger'
       });
       await toast.present();
     } finally {
       this.isConnecting = false;
     }
+  }
+
+  async desconectarGoogleAgenda() {
+    this.googleCalendarService.logout();
+    this.googleAuthorized = false;
+    
+    const toast = await this.toastCtrl.create({
+      message: 'Desconectado do Google Calendar. Você pode conectar com outra conta.',
+      duration: 3000,
+      color: 'success'
+    });
+    await toast.present();
   }
 
   private buildGoogleEvent(agendamento: Agendamento) {
@@ -228,4 +409,91 @@ export class AgendarConsultaPage implements OnInit {
       ]
     };
   }
-}
+
+  private buildDateTime(dateValue: string, timeValue: string): Date | null {
+
+      if (!dateValue || !timeValue) {
+        return null;
+      }
+
+      const cleanedDate = dateValue.trim();
+      const cleanedTime = timeValue.trim();
+      console.debug('buildDateTime values', { cleanedDate, cleanedTime });
+
+      // Caso 1: timeValue já seja um ISO completo (ex: 2026-06-11T10:30:00)
+      if (/T/.test(cleanedTime) && !isNaN(new Date(cleanedTime).getTime())) {
+        return new Date(cleanedTime);
+      }
+
+      // Caso 2: dateValue é ISO completo com T
+      if (/T/.test(cleanedDate) && !isNaN(new Date(cleanedDate).getTime())) {
+        const base = new Date(cleanedDate);
+        const tm = cleanedTime.match(/T?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (tm) {
+          base.setHours(Number(tm[1]), Number(tm[2]), Number(tm[3] || '0'), 0);
+        }
+        return base;
+      }
+
+      // Extrai hora (aceita formatos como '10:30', 'T10:30:00')
+      const timeMatch = cleanedTime.match(/T?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (!timeMatch) {
+        console.warn('buildDateTime: hora inválida', cleanedTime);
+        return null;
+      }
+
+      const hour = Number(timeMatch[1]);
+      const minute = Number(timeMatch[2]);
+      const second = Number(timeMatch[3] || '0');
+
+      if (Number.isNaN(hour) || Number.isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        console.warn('buildDateTime: componentes de hora inválidos', { hour, minute });
+        return null;
+      }
+
+      // Parse da data em vários formatos comuns
+      let year: number | null = null;
+      let month: number | null = null;
+      let day: number | null = null;
+
+      // YYYY-MM-DD (possivelmente com tempo anexado)
+      const isoDateMatch = cleanedDate.split('T')[0].match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoDateMatch) {
+        year = Number(isoDateMatch[1]);
+        month = Number(isoDateMatch[2]);
+        day = Number(isoDateMatch[3]);
+      } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleanedDate)) {
+        // DD/MM/YYYY
+        const parts = cleanedDate.split('/').map(p => Number(p));
+        day = parts[0];
+        month = parts[1];
+        year = parts[2];
+      } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(cleanedDate)) {
+        // YYYY/MM/DD
+        const parts = cleanedDate.split('/').map(p => Number(p));
+        year = parts[0];
+        month = parts[1];
+        day = parts[2];
+      } else {
+        // Tenta fallback com Date.parse em strings amigáveis
+        const fallback = new Date(cleanedDate);
+        if (!isNaN(fallback.getTime())) {
+          fallback.setHours(hour, minute, second, 0);
+          return fallback;
+        }
+        console.warn('buildDateTime: formato de data não reconhecido', cleanedDate);
+        return null;
+      }
+
+      if (year === null || month === null || day === null) {
+        return null;
+      }
+
+      const builtDate = new Date(year, month - 1, day, hour, minute, second);
+      if (isNaN(builtDate.getTime())) {
+        console.warn('buildDateTime: data construída inválida', { year, month, day, hour, minute, second });
+        return null;
+      }
+      return builtDate;
+    }
+  }

@@ -1,23 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
-import { CommonModule, CurrencyPipe } from '@angular/common'; // Adicione CurrencyPipe
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router'; // Adicione RouterLink
-import { DataService, Psicologo } from 'src/app/services/data.service';
+import { Router, RouterLink } from '@angular/router';
+import { PsicologoService } from 'src/app/services/psicologo.service';
 
 @Component({
   selector: 'app-lista-psicologos',
   templateUrl: './lista-psicologos.page.html',
   styleUrls: ['./lista-psicologos.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, RouterLink, CurrencyPipe] // Adicione RouterLink e CurrencyPipe
+  imports: [IonicModule, CommonModule, FormsModule, RouterLink]
 })
 export class ListaPsicologosPage implements OnInit {
-  psicologos: Psicologo[] = [];
+  psicologos: any[] = [];
+  allPsicologos: any[] = [];
   isLoading: boolean = true;
 
   constructor(
-    private dataService: DataService,
+    private psicologoService: PsicologoService,
     private router: Router
   ) {}
 
@@ -27,23 +28,29 @@ export class ListaPsicologosPage implements OnInit {
 
   carregarPsicologos() {
     this.isLoading = true;
-    this.dataService.getPsicologos().subscribe(data => {
-      this.psicologos = data;
+    this.psicologoService.obterTodos().subscribe(data => {
+      this.allPsicologos = data || [];
+      this.psicologos = [...this.allPsicologos];
+      this.isLoading = false;
+    }, error => {
+      console.error('Erro ao carregar psicólogos:', error);
+      this.allPsicologos = [];
+      this.psicologos = [];
       this.isLoading = false;
     });
   }
 
   onSearchChange(event: any) {
-    const termo = event.target.value;
-    this.isLoading = true;
-    
-    if (termo && termo.trim() !== '') {
-      this.dataService.buscarPsicologos(termo).subscribe(data => {
-        this.psicologos = data;
-        this.isLoading = false;
+    const termo = event.target.value?.toString().trim().toLowerCase();
+
+    if (termo) {
+      this.psicologos = this.allPsicologos.filter(psicologo => {
+        const nome = psicologo.nome?.toString().toLowerCase() || '';
+        const especialidade = psicologo.especialidade?.toString().toLowerCase() || '';
+        return nome.includes(termo) || especialidade.includes(termo);
       });
     } else {
-      this.carregarPsicologos();
+      this.psicologos = [...this.allPsicologos];
     }
   }
 

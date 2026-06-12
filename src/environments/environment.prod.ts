@@ -10,8 +10,8 @@
   },
   googleCalendar: {
     clientId: 'REPLACE_WITH_GOOGLE_CLIENT_ID',
-    clientSecret: '',
-    redirectUri: 'https://YOUR_PRODUCTION_URL',
+    clientSecret: 'REPLACE_WITH_GOOGLE_CLIENT_SECRET',
+    redirectUri: 'https://projetomobile-860f3.firebaseapp.com/google-oauth-callback',
     scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
     authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenEndpoint: 'https://oauth2.googleapis.com/token',

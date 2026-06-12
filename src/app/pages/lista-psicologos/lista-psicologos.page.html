@@ -25,7 +25,7 @@
   <ion-list *ngIf="!isLoading">
     <ion-item *ngFor="let psicologo of psicologos" (click)="verDetalhes(psicologo.id)" button detail="true">
       <ion-avatar slot="start">
-        <img [src]="psicologo.fotoUrl || 'assets/image.png'" />
+        <img [src]="psicologo.fotoUrl || psicologo.foto || 'assets/image.png'" />
       </ion-avatar>
       <ion-label>
         <h2>{{ psicologo.nome }}</h2>
